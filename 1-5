@@ -148,5 +148,3 @@ public double findMedianSortedArrays(int[] nums1, int[] nums2) {
         if(aMid<bMid) return getKth(A,B,aStart+k/2,bStart,k-k/2);
         else return getKth(A,B,aStart, bStart+k/2,k-k/2);
     }
-
-if the length of string is zero or null, we can return 0 directly.
