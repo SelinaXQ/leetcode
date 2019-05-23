@@ -8,7 +8,8 @@ what we should return if there is no answer?
 This is the easiest way to think of. Iterate all combinations
 Use two for loop to iterate all combinations of two numbers. Check if the sum is equal to target number. If it is, return the new array. Outside the two for loop, we return null since at this time we have tried all combinations and there is no combinations that is equal to the target.
 Of course what we need to notice here is that in the second for loop the start position is i+1, not 0.
-* binary search:O(nlogn)
+* binary search， Two pointers:
+Time complexy:O(nlogn)
 Another way we can use is binary search. This way is faster than the bruto force method. After we sorting the array by using Arrays.sort(). We first need 2 pointer point to the start and the end of the array separately. while the start pointer is smaller than the end pointer, we compute the sum of the numbers in these two positions and compare with the target value. If  it is larger than target, it means our sum is greater than target so we adjust the end pointer to make it smaller. And vice versa. If the sum is smaller, we larger the start pointer. until we find a case that the sum is equal to the target.
 By now we are still not finished. we get the answer with the sorted array, so we need another two for loop to find the index of these two numbers we found. What we should notice here is that for the second loop we need to check the index whether it is the same as the first one.
 //binary search O(nlogn)
