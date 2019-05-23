@@ -1,0 +1,116 @@
+1. TwoSum array, hashmap, binary search
+some edge cases, like 
+if the array is null?
+if we can use a number twice?
+what we should return if there is no answer?
+
+* bruto force time: O(n^2)
+This is the easiest way to think of. Iterate all combinations
+Use two for loop to iterate all combinations of two numbers. Check if the sum is equal to target number. If it is, return the new array. Outside the two for loop, we return null since at this time we have tried all combinations and there is no combinations that is equal to the target.
+Of course what we need to notice here is that in the second for loop the start position is i+1, not 0.
+* binary search:O(nlogn)
+Another way we can use is binary search. This way is faster than the bruto force method. After we sorting the array by using Arrays.sort(). We first need 2 pointer point to the start and the end of the array separately. while the start pointer is smaller than the end pointer, we compute the sum of the numbers in these two positions and compare with the target value. If  it is larger than target, it means our sum is greater than target so we adjust the end pointer to make it smaller. And vice versa. If the sum is smaller, we larger the start pointer. until we find a case that the sum is equal to the target.
+By now we are still not finished. we get the answer with the sorted array, so we need another two for loop to find the index of these two numbers we found. What we should notice here is that for the second loop we need to check the index whether it is the same as the first one.
+//binary search O(nlogn)
+public int[] twoSum(int[] nums, int target) {
+        if(nums == null) return null;
+        int start=0; int end = nums.length-1;
+        int first = 0; int second = 0;
+        int[] numsCopy = Arrays.copyOf(nums, nums.length);
+        Arrays.sort(numsCopy);
+        int[] res = new int[2];
+        while(start<end){
+            int sum = numsCopy[start]+numsCopy[end];
+            if(sum == target){
+                first = numsCopy[start];
+                second = numsCopy[end];
+                break;
+            }else if(sum<target){
+                start++;
+            }else if(sum>target){
+                end--;
+            }
+        }
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] == first){
+                res[0] = i;
+                break;
+            }
+        }
+        for(int j = 0; j<nums.length; j++){
+            if(nums[j] == second && j!=res[0]){
+                res[1] = j;
+                break;
+            }
+        }
+        return res;
+}
+* hashMap: O(n)
+If we use map, we only need one loop, for every element we loop, we compute a difference between target and the current element and check if there is a number that is equal to this difference in the map. If there is, it means that one of the possible combination is current number and the value stored in the map that we found with the key(difference). else, we just put the number and it’s index into the map.
+
+So why we use HashMap?
+Maps are used to represent a collection of key and value pairs, the order is not order guaranteed. Lists represent a sequential ordering of elements. Cause we are not care about the order here, we just need to know whether there is a number satisfy the condition, so we use hashMap here to short the search time.
+
+
+2. Add two numbers ListNode Linked list
+some edge case, like
+if the length of the linked list is null, or the length is not equal.
+And for the problem of linked list, we always need a dummy node to record the head of the result linked list in order to return it later.
+* O(n)
+First, we need a dummynode that is equal to ListNode(0) and a node called result point to dummynode to add new node.
+outside the for loop, we also need a parameter to record the carry of two single numbers.
+while(l1!=null || l2!=null), we sum the current value of l1 and l2 and carry together. Note that the while condition here is ‘ or’, so before adding up the number, we need to consider the length, if the list is null here, we assign 0 to the current position of this list. So the new number we need to add into result is sum%10, and the new carry is sum/10. Note,Since we always need to consider whether the node is null, we ought to judge if the list is null, if not, we move to next node.
+Note:At last, we need to see whether the carry is not 0, if it is not, we need to add a new number into the list with the value of the carry.
+
+public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        int carry = 0;
+        ListNode dummy = new ListNode(0);
+        ListNode res = dummy;
+        while(l1!=null || l2!=null){
+            int val1 = (l1!=null)?l1.val:0;
+            int val2 = (l2!=null)?l2.val:0;
+            int sum = val1+val2 +carry;
+            if(l1!=null)l1 = l1.next;
+            if(l2!=null)l2 = l2.next;
+            res.next = new ListNode(sum%10);
+            res = res.next;
+            carry = sum/10;
+        }
+        if(carry>0){
+            res.next = new ListNode(carry);
+        }
+        return dummy.next;
+    }
+
+3. Longest Substring Without Repeating Characters hashset, somewhat like a slidng window
+some edge case like,
+if the length of string is zero or null, we can return 0 directly.
+
+we need two pointers here for this problem, one is fast and one is slow. somewhat like a sliding window.
+Also we use a HashSet to record characters cause HashSet does not store duplicate elements. 
+At first, these two pointer are at position 0,
+while(slow<length && fast<length), we check if the character at fast position is in the set, if not, add it into the set and also change the result length into max(result, fast-slow) and fast++, if it is in the set, remove the character at the slow position in the set, and slow++.
+
+public int lengthOfLongestSubstring(String s) {
+        //edge case
+        if(s.length() == 0 || s == null) return 0;
+        //use hashSet
+        int slow = 0;
+        int fast = 0;
+        int length = s.length();
+        int result = 0;
+        HashSet<Character> set = new HashSet<>();
+        while(slow<length && fast<length){
+            if(!set.contains(s.charAt(fast))){
+                set.add(s.charAt(fast));
+                fast++;
+                result = Math.max(result, fast-slow);
+            }else{
+                set.remove(s.charAt(slow));
+                slow++;
+            }
+        }
+        return result;
+    }
+
+4. 
