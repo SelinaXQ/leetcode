@@ -148,3 +148,29 @@ public double findMedianSortedArrays(int[] nums1, int[] nums2) {
         if(aMid<bMid) return getKth(A,B,aStart+k/2,bStart,k-k/2);
         else return getKth(A,B,aStart, bStart+k/2,k-k/2);
     }
+5. Longest Palindrom Substring dynamic programming
+Here, we use dynamic programming.
+dp[j][i] means s.substring(j,i+1) is a palindrom;
+There are two conditions, one is length <= 2, since if a string is a palindrome, the length can be even or odd. if even, the smallest length is 2, and if odd, the smallest length is 1. And if length>2, in this condition we need to consider dp[j+1][i-1].
+then we can update the max length and start and end of the substring.
+public String longestPalindrome(String s) {
+        if(s==null||s.length() == 0) return "";
+        int len = s.length();
+        boolean[][] dp = new boolean[len][len];
+        int start = 0;
+        int end = 0;
+        int max = 0;
+        for(int i = 0; i<len; i++){
+            for(int j = 0; j<=i; j++){
+                if(s.charAt(i) == s.charAt(j) && (i-j<=2||dp[j+1][i-1])){
+                    dp[j][i] = true;
+                }
+                if(dp[j][i]&&max<i-j+1){
+                    max = i-j+1;
+                    start = j;
+                    end = i;
+                }
+            }
+        }
+        return s.substring(start,end+1);
+    }
