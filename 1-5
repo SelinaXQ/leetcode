@@ -113,4 +113,40 @@ public int lengthOfLongestSubstring(String s) {
         return result;
     }
 
-4. 
+4.Median of two sorted array binary search
+some edge case we need to consider, like
+the length.
+* O(log(m+n))
+Use binary search here to find the two median number. Since the arrays are all sorted, what we need to find is the number at (len1+len2+1)/2 and (len1+len2+2)/2.
+We use a helper function getKth(int[] A, int[] B, aStart, bStart, k) here.
+First, we see that whether the aStart is larger then the length of A. If it is,  we only need to find two median number in B which is B[bStart+k-1]. And so as bStart.
+if k==1, we return the min value of A[aStart] and B[bStart].
+And now we can use binary search recursively to find two median value. 
+if aStart+k/2-1 is smaller than A’s length, we can set aMid as A[aStart+k/2-1];
+so as B.
+if aMid is smaller, it means the mid must be at the right side of A, so we use getKth again and set aStart as aStart+k/2, and k as k-k/2 since the length become half, so as bMid.
+public double findMedianSortedArrays(int[] nums1, int[] nums2) {
+        int len1 = nums1.length;
+        int len2 = nums2.length;
+        int left = (len1+len2+1)/2;
+        int right = (len1+len2+2)/2;
+        
+        return (getKth(nums1,nums2,0,0,left)+getKth(nums1,nums2,0,0,right))/2.0;
+    }
+    private int getKth(int[] A, int[] B, int aStart, int bStart, int k){
+        
+        if(aStart>A.length-1) return B[bStart+k-1];
+        if(bStart>B.length-1) return A[aStart+k-1];
+        
+        if (k == 1) return Math.min(A[aStart], B[bStart]);
+        
+        int aMid = Integer.MAX_VALUE;
+        int bMid = Integer.MAX_VALUE;
+        if(aStart+k/2-1 < A.length) aMid = A[aStart+k/2-1];
+        if(bStart+k/2-1 < B.length) bMid = B[bStart+k/2-1];
+        
+        if(aMid<bMid) return getKth(A,B,aStart+k/2,bStart,k-k/2);
+        else return getKth(A,B,aStart, bStart+k/2,k-k/2);
+    }
+
+if the length of string is zero or null, we can return 0 directly.
