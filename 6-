@@ -1,0 +1,47 @@
+6. ZigZag conversion
+* O(n) the length of string
+When we mark the index, we can find some trick between index of rows and the index of string character.
+There are two important parameter, one is interval which record the the interval between characters of first row. Another is step which represent interval between the characters of certain rows.
+interval = 2*numRows - 2;
+for every row i, step = interval*2 - i.
+We need a nested for loop. for every row, we compute the step and assign the character at the inner loop index. the inner loop j start from i and j+=interval to jump the interval. If the current step is smaller then interval , it means the row is between the first and the last row so we need to assign character at j+step to result[count].
+
+public String convert(String s, int numRows) {
+        int length = s.length();
+        if(numRows<=1 || numRows>length){
+            return s;
+        }
+        char[] zigZagChar = new char[length];
+        int count = 0;
+        int interval = 2*numRows-2;
+        
+        for(int i = 0; i<numRows; i++){
+            int step = interval-2*i;
+            for(int j = i; j<length; j+=interval){
+                zigZagChar[count] = s.charAt(j);
+                count++;
+                if(step<interval && step>0 && j+step<length){
+                    zigZagChar[count] = s.charAt(j+step);
+                    count++;
+                }
+            }
+        }
+        return new String(zigZagChar);
+    }
+
+7. reverse integer
+* O(n)
+some edge case, like if the number is negative, if the last number is zero.
+Use x%10 to get last number, and while x!=0, we compute reverse*10+x%10, and also change x into x/10 to eliminate the last number.
+Keep do the process in the while loop until jump out of it we can get the answer.
+
+public int reverse(int x) {
+        int reverse = 0;
+        while(x!=0){
+            int temp = reverse*10 + x%10;
+            if(temp/10!=reverse) return 0;
+            reverse = temp;
+            x=x/10;
+        }
+        return reverse;
+    }
