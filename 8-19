@@ -390,7 +390,6 @@ We move both pointers until the first pointer arrive past the last node. And thi
 At this time, we can relink the next node of second node to the next next node.
 * Time complexity: O(N) N is length of the list
 * Space complexity: O(1)
-
 public ListNode removeNthFromEnd(ListNode head, int n) {
         ListNode dummy = new ListNode(0);
         dummy.next = head;
