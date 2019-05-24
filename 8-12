@@ -1,0 +1,171 @@
+8. Atoi string
+edge cases need to consider:
+white space
+negative value
+string with non-numerical character at back
+string with non-numerical character at start
+out of Integer range
+if the string is empty, return 0
+If no valid conversion could be performed, a zero value is returned.
+
+After we clear all the white space, we deicide whether it is negative. 
+Then we can use ASK code to turn char into number. we always need to judge if current char is a number by using if(str.charAt(i)<'0'||str.charAt(i)>'9') break; in the for loop.
+
+* Time complexity: O(n) without white space
+* Space complexity: O(1)
+public int myAtoi(String str) {
+        if(str == null || str.length() == 0) return 0;
+        //int length = str.length();
+        
+        double result = 0;
+        //remove white space
+        str = str.trim();
+        if(str == null || str.length() == 0) return 0;
+        
+        //negtive
+        boolean isNegative = false;
+        int startIndex = 0;
+        if(str.charAt(0) == '-'){
+            isNegative = true;
+            startIndex++;
+        }
+        if(str.charAt(0) == '+'){
+            startIndex++;
+        }
+        
+        //normal case
+        for(int i = startIndex; i<str.length(); i++){
+            //non-numerical
+            if(str.charAt(i)<'0'||str.charAt(i)>'9') break;
+            int temp = (int)(str.charAt(i) - '0');
+            result = result*10 + temp;
+        }
+        if(isNegative) result = -result;
+        //out of range
+        if(result>Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        if(result<Integer.MIN_VALUE) return Integer.MIN_VALUE;
+        
+        return (int)result;
+        
+    }
+
+9. Palindrome number
+edge case:
+if the number is negative then it cannot be a palindrome number, since -121 -> 121- is definitely not palindrome.
+(1) reverse the number and see whether it is equal to the original number(This method is faster when actually run)
+* Time complexity: O(n)
+* Space complexity: O(1)
+public boolean isPalindrome(int x) {
+        if(x<0) return false;
+        if(x<10) return true;
+        
+        int reverse = 0;
+        int xTemp = x;
+        while(xTemp!=0){
+            int temp = reverse*10 + xTemp%10;
+            if(temp/10!=reverse) return false;
+            reverse = temp;
+            xTemp = xTemp/10;
+        }
+        if(x == reverse) return true;
+        else return false;
+        
+    }
+(2) turn number into string and use two pointers to check
+* Time complexity:O(n) in worst case
+* Space complexity: O(1)
+public boolean isPalindrome(int x) {
+        if(x<0) return false;
+        if(x<10) return true;
+        
+        String str = String.valueOf(x);
+        int start = 0;
+        int end = str.length()-1;
+        while(start<end){
+            if(str.charAt(start)!=str.charAt(end)) return false;
+            else{
+                start++;
+                end--;
+            } 
+        }
+        return true;
+    }
+
+
+10. Regular expression matching dynamic programming
+dynamic programming:  state  init function result
+* Time complexity: O(m*n)
+* Space complexity: O(m*n)
+dp[i][j] -> s[0-i] match with s[0-j], i,j是字符数，不是index
+init: 
+dp[0][0] = true; 
+dp[0][1-] = false;
+dp[1-][0] = true, if p.charAt(i) == '*' && dp[0][i-1] = true
+function:
+Then, we can use two for loop to judge whether match or not.
+* if s.charAt(i) == p.charAt(j) dp[i+1][j+1] = dp[i][j];
+* if p.charAt(j) == ‘.’ dp[i+1][j+1] = dp[i][j];
+* if p.charAt(j) == ‘*’, there are two conditions:
+    * if(p.charAt(j-1)!=s.charAt(i) && p.charAt(j-1)!='.') dp[i+1][j+1] = dp[i+1][j-1];
+    * else dp[i+1][j+1] = dp[i+1][j]||dp[i][j+1]||dp[i+1][j-1];
+result:
+return dp[s.length()][p.length];
+public boolean isMatch(String s, String p) {
+        if(s == null || p == null) return false;
+        boolean[][] dp = new boolean[s.length()+1][p.length()+1];
+        dp[0][0] = true;
+        for(int i = 0; i<p.length(); i++){
+            if(p.charAt(i) == '*' && dp[0][i-1]) dp[0][i+1] = true;//a* match ''
+        }
+        for(int i = 0; i<s.length(); i++){
+            for(int j = 0; j<p.length(); j++){
+                if(p.charAt(j) == s.charAt(i)) dp[i+1][j+1] = dp[i][j];
+                if(p.charAt(j) == '.') dp[i+1][j+1] = dp[i][j];
+                if(p.charAt(j) == '*'){
+                    if(p.charAt(j-1)!=s.charAt(i) && p.charAt(j-1)!='.') dp[i+1][j+1] = dp[i+1][j-1];
+                    else dp[i+1][j+1] = dp[i+1][j]||dp[i][j+1]||dp[i+1][j-1];
+                }
+                
+            }
+        }
+        return dp[s.length()][p.length()];
+    }
+11. Container with most water two pointers
+(1) use two pointers, start from two side of the array.
+If the height is higher, it can contain more water. So we always move the shorter height pointer.
+In order to compute area, we find out the shorter one of the two height and multiply with the width.
+* Time complexity: O(n) in worst case
+* Space complexity: O(1)
+public int maxArea(int[] height) {
+        //use two pointers
+        int maxArea = 0;
+        int left = 0;
+        int right = height.length-1;
+        while(left<right){
+            int currentArea = Math.min(height[left], height[right])*(right-left);
+            maxArea = Math.max(maxArea, currentArea);
+            if(height[left]<height[right]) left++;
+            else right--;
+        }
+        return maxArea;
+    }
+12. Integer to Roman
+Use StringBuilder
+* Time complexity: O(n) at most
+* Space complexity: 2O(n)
+List the number and romans with two arrays in descending order
+start the begin of the numbers, check if the given number minus the number in array is larger than 0, if it is, 
+append the number into StringBuilder.
+
+public String intToRoman(int num) {
+        int[] arabics = new int[]{1000,900,500,400,100,90,50,40,10,9,5,4,1};
+        String[] romans = new String[]{"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i<arabics.length; i++){
+            while(num - arabics[i] >=0){
+                sb.append(romans[i]);
+                num = num-arabics[i];
+            }
+        }
+        return sb.toString();
+    }
