@@ -169,3 +169,106 @@ public String intToRoman(int num) {
         }
         return sb.toString();
     }
+13. Roman to Integer
+Use HashMap, Start from the last roman character 
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int romanToInt(String s) {
+        if(s==null||s.length() == 0) return 0;
+        Map<Character, Integer> romanValues = new HashMap<>();
+        romanValues.put('I',1);
+        romanValues.put('V',5);
+        romanValues.put('X',10);
+        romanValues.put('L',50);
+        romanValues.put('C',100);
+        romanValues.put('D',500);
+        romanValues.put('M',1000);
+        
+        int length = s.length();
+        int result = romanValues.get(s.charAt(length-1));
+        
+        for(int i = length-2; i>=0; i--){
+            if(romanValues.get(s.charAt(i)) >= romanValues.get(s.charAt(i+1))){
+                result += romanValues.get(s.charAt(i));
+            }else{
+                result -= romanValues.get(s.charAt(i));
+            }
+        }
+        return result;
+    }
+
+14. Longest common prefix
+use for loop to check one by one.
+* Time complexity: O(n*m) n:strs.length, m: string’s length
+* Space complexity: O(1)
+public String longestCommonPrefix(String[] strs) {
+        if(strs.length == 0||strs == null) return "";
+        String LCP = strs[0];
+        for(int i = 1; i<strs.length; i++){
+            String current = strs[i];
+            int j = 0;
+            while(j<LCP.length() && j<current.length() && LCP.charAt(j) == current.charAt(j)){
+                j++;
+            }
+            if(j == 0) return "";
+            Lcp = LCP.substring(0,j);
+        }
+        return LCP;
+    }
+
+15. 3Sum sort and two pointers
+edge case: if the number can be used twice or three times.
+Sort the array, iterate through list and use two pointers to find the target.
+* Time complexity: O(n^2)
+* Space complexity: O(n^2)
+public List<List<Integer>> threeSum(int[] nums) {
+        List<List<Integer>> res = new ArrayList<>();
+        Arrays.sort(nums);
+        for(int i = 0; i+2<nums.length; i++){
+            if(i>0 && nums[i] == nums[i-1]) continue;
+            int start = i+1;
+            int end = nums.length-1;
+            int target = -nums[i];
+            while(start<end){
+                if(nums[start] + nums[end] == target){
+                    res.add(Arrays.asList(nums[start],nums[end],nums[i]));
+                    start++;
+                    end--;
+                    while(start<end && nums[start] == nums[start-1]) start++;
+                    while(start<end && nums[end] == nums[end+1]) end--;
+                }else if(nums[start]+nums[end]<target){
+                    start++;
+                }else{
+                    end--;
+                }
+                
+                
+            }
+        }
+        return res;
+    }
+
+16. 3Sum closest sort and two pointers
+edge case:
+If the length is less than 3 or the array is null, return -1?
+Sort the array, iterate through list and use two pointers to find the closest target. Sum all the three numbers and compare the difference of this sum and target and difference of current closest and target.
+* Time complexity: O(n^2)
+* Space complexity: O(1)
+public int threeSumClosest(int[] nums, int target) {
+        if(nums == null || nums.length<3) return -1;
+        Arrays.sort(nums);
+        int closestSum = nums[0] + nums[1] + nums[2];
+        for(int i = 0; i<nums.length-2; i++){
+            int left = i+1;
+            int right = nums.length - 1;
+            while(left<right){
+                int sum = nums[i] + nums[left] + nums[right];
+                if(Math.abs(sum-target) < Math.abs(closestSum - target)){
+                    closestSum = sum;
+                }
+                if(sum<target) left++;
+                else right--;
+            }
+        }
+        return closestSum;
+    }
