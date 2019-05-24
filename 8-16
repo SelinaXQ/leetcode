@@ -272,3 +272,139 @@ public int threeSumClosest(int[] nums, int target) {
         }
         return closestSum;
     }
+17. Letter combinations of a phone number recursion(backtracking) HashMap
+edge case: if digit is null or is “”
+the difference of ArrayList AND  LinkedList
+First we need to check the edge case.
+Then, we need to construct a letter map, the key is the numbers, and the value is char array related to that number.
+In order to form one of the result, we need the help of StringBuilder and a helper function used recursively.
+In the helper function, for every single number we retrieve, we append the char in the array to stringbuilder,
+and call the helper function, then delete the new inserted character.
+The stop condition is that the length of current string builder is equal to the length of the digits, and now we can add this string to result.
+Finally, int the main function we return the result.
+* Time complexity: O(3^N×4^M) where N is the number of digits in the input that maps to 3 letters (e.g. 2, 3, 4, 5, 6, 8) and M is the number of digits in the input that maps to 4 letters (e.g. 7, 9), and N+M is the total number digits in the input.
+* Space complexity: O(3^N×4^M) since one has to keep 3^N *4^M solutions.
+public List<String> letterCombinations(String digits) {
+        List<String> result = new ArrayList<>();
+        if(digits == null || digits.equals("")) return result;
+        
+        Map<Character, char[]> letterMap = new HashMap<>();
+        letterMap.put('0',new char[]{});
+        letterMap.put('1',new char[]{});
+        letterMap.put('2', new char[]{'a','b','c'});
+        letterMap.put('3', new char[]{'d','e','f'});
+        letterMap.put('4', new char[]{'g','h','i'});
+        letterMap.put('5', new char[]{'j','k','l'});
+        letterMap.put('6', new char[]{'m','n','o'});
+        letterMap.put('7', new char[]{'p','q','r','s'});
+        letterMap.put('8', new char[]{'t','u','v'});
+        letterMap.put('9', new char[]{'w','x','y','z'});
+        
+        StringBuilder sb = new StringBuilder();
+        helper(digits, sb, letterMap, result);
+        return result;
+    }
+    
+    private void helper(String digits, StringBuilder sb, Map<Character, char[]> letterMap,List<String> result){
+        if(sb.length() == digits.length()) {
+            result.add(sb.toString());
+            return;
+        }
+        for(char ch: letterMap.get(digits.charAt(sb.length()))){
+            sb.append(ch);
+            helper(digits, sb, letterMap, result);
+            sb.deleteCharAt(sb.length()-1);
+        }
+    }
+
+18. 4Sum
+edge case: 
+If the length of the array is null or is less than 4
+whether we can use one number many times.
+
+Sort the array first, actually pretty much the same as the 3Sum problem, use one more for loop(a nested for loop), iterate all combinations
+and use another two pointers. Sum up all the 4 numbers and compare with the target. note that we need to always check if the current number is equal to
+the former number we have used. If used, ++ or — to get the next number.
+* Time complexity: O(n^3)
+* Space complexity: O(n^2)
+public List<List<Integer>> fourSum(int[] nums, int target) {
+        List<List<Integer>> result = new ArrayList<>();
+        if(nums == null || nums.length < 4 ) return result;
+        
+        Arrays.sort(nums);
+        for(int i = 0; i<nums.length - 3;i++){
+            if(i!=0 && nums[i] == nums[i-1]) continue;
+            for(int j = i+1; j<nums.length-2; j++){
+                if(j!=i+1 && nums[j] == nums[j-1]) continue;
+                
+                int left = j+1;
+                int right = nums.length-1;
+                
+                while(left<right){
+                    int sum = nums[i]+nums[j]+nums[left]+nums[right];
+                    
+                    if(sum == target){
+                        List<Integer> temp = new ArrayList<>();
+                        result.add(Arrays.asList(nums[i],nums[j],nums[left],nums[right]));
+                        left++;
+                        right--;
+                        while(left<right && nums[left] == nums[left-1]) left++;
+                        while(left<right && nums[right] == nums[right+1]) right--;
+                    }else if(sum<target){
+                        left++;
+                    }else{
+                        right--;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+19. Remove Nth node from end of the list list
+(1) two pass, we first use a while loop to find out the length of the list, then another loop to delete the node.
+We also need a dummy node to avoid some edge case like the list is null, dummy.next = head;
+* Time complexity: O(N) N is length of the list
+* Space complexity: O(1)
+public ListNode removeNthFromEnd(ListNode head, int n) {
+        ListNode dummy = new ListNode(0);
+        int length = 0;
+        dummy.next = head;
+        ListNode temp = head;
+        while(temp!=null){
+            length++;
+            temp = temp.next;
+        }
+        length = length-n;
+        temp = dummy;
+        while(length>0){
+            length--;
+            temp = temp.next;
+        }
+        temp.next = temp.next.next;
+        return dummy.next;
+    }
+(2) follow up: if we only want to solve this problem in one pass
+Instead of using one pointer, we can use two pointers here, they both start from dummy node.
+The first pointer advanced n+1 steps, the second pointer start at the dummy node, so this time the space between them is exactly n space.
+We move both pointers until the first pointer arrive past the last node. And this time the second pointer will be pointing at the n+1th node counting from the last.
+At this time, we can relink the next node of second node to the next next node.
+* Time complexity: O(N) N is length of the list
+* Space complexity: O(1)
+
+public ListNode removeNthFromEnd(ListNode head, int n) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode first = dummy;
+        ListNode second = dummy;
+        
+        for(int i = 0; i<=n; i++){
+            first = first.next;
+        }
+        while(first!=null){
+            first = first.next;
+            second = second.next;
+        }
+        second.next = second.next.next;
+        return dummy.next;
+        
+    }
