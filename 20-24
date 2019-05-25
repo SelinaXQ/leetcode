@@ -1,0 +1,288 @@
+20. Valid parentheses stack
+edge case:
+the string is null, return true?
+Use stack when encounter a left parentheses, push it into stack, else judge whether the stack is empty, if it is,
+it means there is no left parentheses can be match to it, so return false.
+If the stack is not empty, we popped out a character and judge whether the current parentheses can be matched.
+* Time complexity: O(n)
+* Space complexity: O(n)
+public boolean isValid(String s) {
+        if(s.length() == 0) return true;
+        Stack<Character> stack = new Stack<>();
+        for(int i = 0; i<s.length(); i++){
+            if(s.charAt(i) == '('|| s.charAt(i) == '{' || s.charAt(i) == '['){
+                stack.push(s.charAt(i));
+            }else{
+                if(stack.isEmpty()) return false;
+                if(!stack.isEmpty()){
+                    char curr = stack.pop();
+                    if((curr == '(' && s.charAt(i) != ')')||
+                      (curr == '{' && s.charAt(i) != '}') ||
+                      (curr == '[' && s.charAt(i) != ']')){
+                        return false;
+                    }
+                }
+            }
+        }
+        if(!stack.isEmpty()) return false;
+        return true;
+    }
+
+21. Merge two sorted list list
+Use a dummy node for later return. Use a curr node to store new ListNode.
+* Time complexity: O(N) ,N is shortest length of two list
+* Space complexity: O(N+M) 
+public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        ListNode p = l1;
+        ListNode q = l2;
+        while(p!=null && q!=null){
+            int val1 = p.val;
+            int val2 = q.val;
+            if(val1<=val2){
+                curr.next = new ListNode(val1);
+                p = p.next;
+            } 
+            else {
+                curr.next = new ListNode(val2);
+                q = q.next;
+            }
+            curr = curr.next;
+        }
+        if(p!=null) curr.next = p;
+        else curr.next = q;
+        return dummy.next;
+    }
+
+22. Generate parentheses string backtracking
+edge case, if n == 0 
+Use backtracking, a helper function with parameter: n(left remain number of parentheses), n(right), tempString, res
+four conditions we need to consider:
+-If left > right return, cause left should always add first, so there is no condition that left is larger than right.
+-If left == 0 and right == 0 , this time we can add the temp string into result.
+-If left >0, we add a left parentheses into the temp string and left-- and call helper function recursively.
+-If right >0, we add a right parentheses into the temp string and right— and call helper function recursively.
+* Time complexity: O(4^n/√n). Each valid sequence has at most nsteps during the backtracking procedure.
+* Space complexity: O(4^n/√n).  as described above, and using O(n)space to store the sequence. 
+public List<String> generateParenthesis(int n) {
+        List<String> res = new ArrayList<>();
+        if(n==0) return res;
+        helper(res,"",n,n);
+        return res;
+    }
+    public void helper(List<String> res, String s, int left, int right){
+        if(left>right) return;
+        if(left == 0 && right == 0) res.add(s);
+        if(left>0){
+            helper(res,s+"(",left-1,right);
+        }
+        if(right>0){
+            helper(res,s+")",left, right-1);
+        }
+    }
+
+23. Merge k sorted list linked list
+(1) bruto force:
+Traverse all the linked list and collect the values of the node into a array list, sort the list and create a new linkedlist one by one.
+* Time complexity: O(NlogN) 
+    * Collecting all the values costs O(N)O(N) time.
+    * A stable sorting algorithm costs O(N\log N)O(NlogN) time.
+    * Iterating for creating the linked list costs O(N)O(N) time.
+* Space complexity: O(N)
+    * Sorting cost O(N)O(N) space (depends on the algorithm you choose).
+    * Creating a new linked list costs O(N)O(N) space. 
+public ListNode mergeKLists(ListNode[] lists) {
+        List<Integer> list = new ArrayList<Integer>();
+        for(ListNode li: lists){
+            while(li!=null){
+                list.add(li.val);
+                li = li.next;
+            }
+        }
+        Collections.sort(list);
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        for(int node: list){
+            curr.next = new ListNode(node);
+            curr = curr.next;
+        }
+        curr.next = null;
+        return dummy.next;
+    }
+(2) compare each node of the each list, similar to merge 2 sorted list. 这个方法超级无敌慢,咋这么慢，哎不好不好
+* Time complexity: O(kN), k is the number of the linked list, N is the number of node in the final linked list.
+* Space complexity: O(N)
+public ListNode mergeKLists(ListNode[] lists) {
+        int minIndex = 0;
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        while(true){
+            boolean isBreak = true;
+            int min = Integer.MAX_VALUE;
+            for(int i = 0; i<lists.length; i++){
+                if(lists[i]!=null){
+                    if(lists[i].val<min){
+                        minIndex = i;
+                        min = lists[i].val;
+                    }
+                    isBreak = false;
+                }
+            }
+            if(isBreak) break;
+            curr.next = new ListNode(lists[minIndex].val);
+            curr = curr.next;
+            lists[minIndex] = lists[minIndex].next;
+        }
+        curr.next = null;
+        return dummy.next;
+    }
+(3) Priority Queue(optimized method of (2))
+我们将优先级定义为数越小优先级越高，如果用堆实现优先队列，这样我们每次找最小不再需要 O（k），而是 O（log（k）），当然这样的话，我们加入新的话不再是 O（1），也需要 O（log（k））。
+Almost the same as (2), but optimize the compare process with the help of priority queue.
+So at first, we only add the first node of each linked list.
+And the while loop is while(!queue.isEmpty()), and in the while loop, we add the polled node’s next into the priority queue if it is not null.
+* Time complexity: O(Nlogk) where k is the number of linked lists.
+    * The comparison cost will be reduced to O(logk) for every pop and insertion to priority queue. But finding the node with the smallest value just costs OO(1) time.
+    * There are N nodes in the final linked list.
+* Space complexity:
+    * O(n) Creating a new linked list costs O(n) space.
+    * O(k) The code above present applies in-place method which cost O(1) space. And the priority queue (often implemented with heaps) costs O(k) space (it's far less than N in most situations). 
+public ListNode mergeKLists(ListNode[] lists) {
+        Comparator<ListNode> cmp;
+        cmp = new Comparator<ListNode>(){
+            public int compare(ListNode l1, ListNode l2){
+                return l1.val-l2.val;
+            }
+        };
+        
+        Queue<ListNode> q = new PriorityQueue<ListNode>(cmp);
+        for(ListNode l:lists){
+            if(l!=null) q.add(l);
+        }
+        
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        while(!q.isEmpty()){
+            curr.next = q.poll();
+            curr = curr.next;
+            ListNode next = curr.next;
+            if(next!=null) q.add(next);
+            
+        }
+        curr.next = null;
+        return dummy.next;
+    }
+priority queue: can be implemented with heaps.
+A heap is a specialized tree-based data structure which is essentially an almost complete[1] tree that satisfies the heap property: in a max heap, for any given node C, if P is a parent node of C, then the key (the value) of P is greater than or equal to the key of C. In a min heap, the key of P is less than or equal to the key of C.[2] The node at the "top" of the heap (with no parents) is called the root node.
+The heap is one maximally efficient implementation of an abstract data type called a priority queue, and in fact priority queues are often referred to as "heaps", regardless of how they may be implemented. In a heap, the highest (or lowest) priority element is always stored at the root. However, a heap is not a sorted structure; it can be regarded as being partially ordered. A heap is a useful data structure when it is necessary to repeatedly remove the object with the highest (or lowest) priority. FROM WIKIPEIDIA
+有道题实现min heap来着到时候看
+Comparator<type> cmp = new Comparator<>(){
+public int compare(type l1, type l2){
+return l1 - l2;
+}
+}
+Queue<type> q = new PriorityQueue<>(cmp);
+
+(4) Merge list one by one merge 2 lists, 这个方法也超级慢呀...
+Convert merge k lists into merge 2 lists k-1 times with a helper function merge two lists.
+* Time complexity: O(kN) where k is the number of linked lists.
+* 
+* Space complexity: O(1)
+public ListNode mergeKLists(ListNode[] lists) {
+        if(lists.length == 0) return null;
+        if(lists.length == 1) return lists[0];
+        ListNode res = mergeTwoLists(lists[0],lists[1]);
+        for(int i = 2; i<lists.length; i++){
+            res = mergeTwoLists(res, lists[i]);
+        }
+        return res;
+    }
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2){
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        while(l1!=null && l2!=null){
+            if(l1.val<l2.val){
+                curr.next = l1;
+                l1 = l1.next;
+                curr = curr.next;
+            }else{
+                curr.next = l2;
+                l2 = l2.next;
+                curr = curr.next;
+            }
+        }
+        if(l1!=null) curr.next = l1;
+        else curr.next = l2;
+        return dummy.next;
+    }
+(5)merge k lists with divide and conquer. 这个最快！Hhhhhh
+* Time complexity:O(klogn)
+* Space complexity: O(1)
+public ListNode mergeKLists(ListNode[] lists) {
+        if(lists.length == 0) return null;
+        if(lists.length == 1) return lists[0];
+        int interval = 1;
+        while(interval<lists.length){
+            for(int i = 0; i+interval<lists.length; i = i+interval*2){
+                lists[i] = mergeTwoLists(lists[i],lists[i+interval]);
+            }
+            interval = interval * 2;
+        }
+        return lists[0];
+    }
+    public ListNode mergeTwoLists(ListNode l1, ListNode l2){
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        while(l1!=null && l2!=null){
+            if(l1.val<l2.val){
+                curr.next = l1;
+                l1 = l1.next;
+                curr = curr.next;
+            }else{
+                curr.next = l2;
+                l2 = l2.next;
+                curr = curr.next;
+            }
+        }
+        if(l1!=null) curr.next = l1;
+        else curr.next = l2;
+        return dummy.next;
+    }
+
+24. Swap nodes in pairs. aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa linked list
+(1) with two pointers
+* Time complexity: O(n)
+* Space complexity:O(1)
+We need a prev node to record the node ahead of curr node.
+public ListNode swapPairs(ListNode head) {
+        if(head == null || head.next == null) return head;
+        ListNode curr = head;
+        ListNode newHead = head.next;
+        ListNode prev = new ListNode(0);
+        while(curr!=null && curr.next!=null){
+            ListNode next = curr.next;
+            prev.next = next;
+            
+            //swap
+            curr.next = next.next;
+            next.next = curr;
+            
+            prev = curr;
+            curr = curr.next;
+        }
+        return newHead;
+    }
+(2) recursion swap
+* Time complexity: O(n)
+* Space complexity:O(1)
+public ListNode swapPairs(ListNode head) {
+        if(head == null || head.next == null) return head;
+        
+        ListNode next = head.next;
+        ListNode following = next.next;
+        head.next = swapPairs(following);
+        next.next = head;
+        
+        return next;
+    }
