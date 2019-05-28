@@ -1,0 +1,192 @@
+25. Reverse Nodes in K-Group[]linked list
+note:
+For k = 3, you should return: 3->2->1->4->5 如果不能整除，那么后面那段不用reverse操作
+
+(1)Use recursion to solve this problem. This method is faster when actually run
+First use a for loop to find the k+1 node, like cut the linked list into n/k part, we reverse it part by part.
+if count == k(整除了)
+we first recursively reverse the list start from k+1 node.
+Then with a while loop, we use count to decide when to jump out.
+Here, we need a temp node to record the new head.
+* Time complexity: O(N)
+* Space complexity: O(n/k), not constant space as required
+public ListNode reverseKGroup(ListNode head, int k) {
+        ListNode curr = head;
+        int count = 0;
+        while(curr!=null && count!=k){
+            curr = curr.next;
+            count++;
+        }
+        if(count == k){
+            curr = reverseKGroup(curr,k);//reverse list with k+1 node as head
+            while(count-- >0){//reverse current k group
+                ListNode temp = head.next;
+                head.next = curr;
+                curr = head;
+                head = temp;
+            }
+            head = curr;
+        }
+        return head;
+    }
+
+(2) no recursion
+Need a for loop first to find the length of the linked list.
+Then also a dummy node to record the head;
+Then a nested for loop, the first for loop to to cut the linked list into n/k part as before,
+the second for loop is to actually reverse the list.
+Here we need a prev node record the dummy(the node ahead of the start node, a tail node record the head which is later become the tail of this part list after we reverse it) and a next node record the node after the end node.
+What we need to notice here is that the second loop is start from =1 to <k. When k is 3 we only need 2 round to reverse current part of list.
+
+public ListNode reverseKGroup(ListNode head, int k) {
+        int length = 0;
+        for(ListNode i = head; i!=null; length++,i = i.next);
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        for(ListNode prev = dummy, tail = head; length>=k; length-=k){
+            for(int i = 1; i<k; i++){
+                ListNode next = tail.next.next;
+                tail.next.next = prev.next;
+                prev.next = tail.next;
+                tail.next = next;
+            }
+            
+            prev = tail;
+            tail = tail.next;
+        }
+        return dummy.next;
+    }
+
+26. Remove duplicates from sorted array array, use one pointer
+Since the requirement is do it in O(1) space, we need a ’slow’ pointer here to record the element we current can modify.
+with a for loop if current element is not equal to the element before it. It means this is a new number we haven’t encounter yet. So we assign this new number to the index = slow, and slow++.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int removeDuplicates(int[] nums) {
+        if(nums.length < 2 ) return nums.length;
+        int slow = 1;
+        for(int i = slow; i<nums.length; i++){
+            if(nums[i] != nums[i-1]){
+                nums[slow] = nums[i];
+                slow++;
+            }
+        }
+        return slow;
+    }
+
+27. Remove element array, use one pointer
+Basically the same method as problem 26. Just change the condition to nums[i]!=val.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int removeElement(int[] nums, int val) {
+        if(nums.length == 0 || nums == null) return 0;
+        int slow = 0;
+        for(int i = slow; i<nums.length; i++){
+            if(nums[i]!=val){
+                nums[slow] = nums[i];
+                slow++;
+            }
+        }
+        return slow;
+    }
+
+28. Implement strStr() string
+edge case: 
+If needle is empty, what do we need to return? 0
+if string is empty, what do we need to return? -1
+
+we use a nested for loop here to check, if the length we already checked is equal to the needle’s length, it means we found one, return the index of the first for loop. If not we jump out the second for loop and index++ of first for loop.
+* Time complexity: O(n*m)
+* Space complexity: O(1)
+public int strStr(String haystack, String needle) {
+        if(needle == null || needle.length() == 0) return 0;
+        if(haystack == null || haystack.length() = 0) return -1;
+        int m = haystack.length();
+        int n = needle.length();
+        for(int i = 0; i<m-n+1; i++){
+            int j = 0;
+            for(j = 0; j<n; j++){
+                if(haystack.charAt(i+j)!=needle.charAt(j)) break;
+            }
+            if(j == n) return i;
+        }
+        return -1;
+    }
+
+29. Divide two integers
+edge case: 
+If divisor is 0, return MAX_VALUE;
+If dividend is MIN_VALUE
+    If divisor is -1, return MAX_VALUE
+    If divisor is 1, return MIN_VALUE
+
+Use long to avoid integer overflow.
+Very similar to binary search, since we multiply 2 every time
+* Time complexity:logdividend* logdivisor
+* Space complexity: O(1)?????
+public int divide(int dividend, int divisor) {
+        if(divisor == 0) return Integer.MAX_VALUE;
+        if(dividend == Integer.MIN_VALUE){
+            if(divisor == -1) return Integer.MAX_VALUE;
+            if(divisor == 1) return Integer.MIN_VALUE;
+        }
+        long divd = (long) dividend;
+        long divs = (long) divisor;
+        int sign = 1;
+        if(divd<0){
+            divd = -divd;
+            sign = -sign;
+        }
+        if(divs < 0){
+            divs = -divs;
+            sign = -sign;
+        }
+        
+        int res = 0;
+        while(divd>=divs){
+            int shift = 0;
+            // << 移位运算，相当于x2, 移一位-> x2, 移两位-> x4
+            while(divd >= divs<<shift){
+                shift++;
+            }
+            res = res+(1<<(shift-1));
+            divd = divd-(divs<<(shift-1));
+        }
+        return sign*res;
+    }
+
+30. Substring with Concatenation of All Words hashmap
+use hashmap .
+Build a hashmap here to store each words and the time of its appearance.
+use for loop to check index by index if there is a string contains all the words.
+* Time complexity:O(s.len*words.length)
+* Space complexity: O(words.length)
+public List<Integer> findSubstring(String s, String[] words) {
+        List<Integer> res = new ArrayList<>();
+        if(s.length() == 0 || s == null || words.length == 0 || words == null) return res;
+        
+        int slen = s.length();
+        int arrlen = words.length;
+        int wlen = words[0].length();
+        HashMap<String, Integer> map = new HashMap<>();
+        for(String str : words){
+            map.put(str, map.getOrDefault(str, 0) + 1);
+        }
+        
+        for(int i = 0; i<=slen - arrlen*wlen; i++){
+            HashMap<String, Integer> copy = new HashMap<>(map);
+            int k = arrlen;
+            int j = i;
+            while(k>0){
+                String str = s.substring(j, j+wlen);
+                if(!copy.containsKey(str)||copy.get(str)<1){
+                    break;
+                } 
+                copy.put(str, copy.get(str)-1);
+                k--;
+                j+=wlen;
+            }
+            if(k==0) res.add(i);
+        }
+        return res;
+    }
