@@ -1,0 +1,238 @@
+31. Next permutation array
+find the first small and first large from back to start, swap them and then sort.
+* Time complexity: O(N), in worst case, two scans of whole array
+* Space complexity: O(1)
+
+public void nextPermutation(int[] nums) {
+        if(nums == null || nums.length == 0) return;
+        int replace = nums.length-2;
+        while(replace >= 0){// to find the first acsending order element, first small
+            if(nums[replace] < nums[replace+1]) break;
+            replace--;
+        }
+        if(replace == -1){// 321
+            Arrays.sort(nums);
+            return;
+        }
+        int larger = replace+1;
+        while(larger<nums.length&&nums[larger]>nums[replace]){//first large
+            larger++;
+        }
+        int temp = nums[replace];
+        nums[replace] = nums[larger-1];
+        nums[larger-1] = temp;
+        Arrays.sort(nums,replace+1,nums.length);
+        
+    }
+
+32. Longest valid parentheses stack, dynamic programming
+(1) stack
+For every ‘(’ encountered, we push its index into the stack.
+For every ‘)'encountered, we pop the topmost element and subtract the current element's index from the top element of the stack, which gives the length of the currently encountered valid string of parentheses. If while popping the element, the stack becomes empty, we push the current element's index onto the stack. In this way, we keep on calculating the lengths of the valid substrings, and return the length of the longest valid string at the end.
+* Time complexity: O(N)
+* Space complexity: O(N)
+
+public int longestValidParentheses(String s) {
+        if(s ==  null || s.length()<2) return 0;
+        int max = 0;
+        Stack<Integer> stack = new Stack<>();
+        stack.push(-1);
+        for(int i = 0; i<s.length(); i++){
+            if(s.charAt(i) == '(') stack.push(i);
+            else{
+                stack.pop();
+                if(stack.isEmpty()) stack.push(i);
+                else max = Math.max(max, i-stack.peek());
+            }
+        }
+        return max;
+    }
+(2) dynamic programming
+
+* Time complexity:  O(N)
+* Space complexity: O(N)
+public int longestValidParentheses(String s) {
+        int max = 0;
+        int dp[] = new int[s.length()];
+        for (int i = 1; i < s.length(); i++) {
+            if (s.charAt(i) == ')') {
+                if (s.charAt(i - 1) == '(') {
+                    dp[i] = (i >= 2 ? dp[i - 2] : 0) + 2;
+                } else if (i - dp[i - 1] > 0 && s.charAt(i - dp[i - 1] - 1) == '(') {
+                    dp[i] = dp[i - 1] + ((i - dp[i - 1]) >= 2 ? dp[i - dp[i - 1] - 2] : 0) + 2;
+                }
+                max = Math.max(max, dp[i]);
+            }
+        }
+        return max;
+    }
+
+33. Search in rotated sorted array array binary search
+虽然不是传统的binary search，但是很像, 
+also there are two more condition we need to consider inside nums[start]<nums[mid] and nums[end]>nums[mid]
+* Time complexity: O(logN)
+* Space complexity: O(1)
+
+public int search(int[] nums, int target) {
+        if(nums == null || nums.length == 0) return -1;
+        int start = 0;
+        int end = nums.length-1;
+        while(start + 1< end){
+            int mid = start+(end-start)/2; // avoid overflow
+            if(target == nums[mid]) return mid;
+            else if(nums[start]<nums[mid]){
+                if(target >= nums[start] && target<=nums[mid]) end = mid;
+                else start = mid;
+            }else if(nums[end] > nums[mid]){
+                if(target >= nums[mid] && target<=nums[end]) start = mid;
+                else end = mid;
+            }
+                
+        }
+        
+        if(nums[start] == target) return start;
+        if(nums[end] == target) return end;
+        
+        return -1;
+        
+    }
+
+34. Find first and last position of element in sorted array array binary search
+similar to problem 33, use two round to find the start and end point separately.
+* Time complexity: O(logN)
+* Space complexity: O(1)
+public int[] searchRange(int[] nums, int target) {
+        int[] res = {-1,-1};
+        if(nums == null || nums.length == 0) return res;
+        int start_point = -1;
+        int end_point = -1;
+        int start = 0;
+        int end = nums.length -1;
+        //start point
+        while(start+1<end){
+            int mid = start+(end-start)/2;
+            if(nums[mid] >= target) end = mid;
+            else start = mid;
+        }
+        if(nums[start] == target) start_point = start;
+        else if(nums[end] == target) start_point = end;
+        if(start_point == -1) return res;
+        //end point
+        start = 0;
+        end = nums.length-1;
+        while(start+1<end){
+            int mid = start+(end-start)/2;
+            if(nums[mid]<=target) start = mid;
+            else end = mid;
+        }
+        if(nums[end] == target) end_point = end;
+        else if(nums[start] == target) end_point = start;
+        res[0] = start_point;
+        res[1] = end_point;
+        return res;
+    }
+
+35. Search insert position array binary search
+(1)Don’t want to use binary search, use a while loop to search one by one, this one actually beats 100% java solution, faster than binary search
+Use a res para to record the index.
+* Time complexity: O(N)
+* Space complexity: O(1)
+public int searchInsert(int[] nums, int target) {
+        int res = 0;
+        while(res<nums.length){
+            if(nums[res] == target) return res;
+            else if(nums[res] < target) res++;
+            else if(nums[res]>target) return res;
+        }
+        return res;
+    }
+(2) binary search
+* Time complexity: O(logN)
+* Space complexity: O(1)
+public int searchInsert(int[] nums, int target) {
+        if(nums == null || nums.length == 0) return 0;
+        int start = 0;
+        int end = nums.length-1;
+        while(start+1<end){
+            int mid = start+(end-start)/2;
+            if(nums[mid]<target) start = mid;
+            else if(nums[mid]>target) end = mid;
+            else return mid;
+        }
+        if(numd[end]<target) return end+1;
+        else if(nums[start]>=target) return start;
+        else return end;
+    }
+
+36. valid sudoku
+edge case: the board is not valid, not 9x9
+(1) bruto force without using HashSet, using boolean array to record whether certain number has been used.
+check rows, columns and each block.
+This method run faster than hashset
+* Time complexity: O(n*n)
+* Space complexity: O(n)
+public boolean isValidSudoku(char[][] board) {
+        if(board == null || board.length!=9
+          || board[0].length!=9) return false;
+        //check row
+        for(int row = 0; row<9; row++){
+            boolean[] taken = new boolean[9];
+            for(int idx = 0; idx<9; idx++){
+                char c = board[row][idx];
+                if(c!='.'){
+                    int num = c-'1';
+                    if(taken[num] == true) return false;
+                    else taken[num] = true;
+                }
+            }
+        }
+        //check column
+        for(int col = 0; col<9; col++){
+            boolean[] taken = new boolean[9];
+            for(int idx = 0; idx<9; idx++){
+                char c = board[idx][col];
+                if(c!='.'){
+                    int num = c-'1';
+                    if(taken[num] == true) return false;
+                    else taken[num] = true;
+                }
+            }
+        }
+        //check 3x3 block
+        for(int box = 0; box<9; box++){
+            boolean[] taken = new boolean[9];
+            for(int row = 0; row<3; row++){
+                for(int col = 0; col<3; col++){
+                    char c = board[row+3*(box/3)][col+3*(box%3)];
+                    if(c!='.'){
+                        int num = c-'1';
+                        if(taken[num] == true) return false;
+                        else taken[num] = true;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+(2) HashSet
+* Time complexity: O(n*n)
+* Space complexity: O(n)
+public boolean isValidSudoku(char[][] board) {
+        for(int i = 0; i<board.length; i++){
+            Set<Character> rows = new HashSet<>();
+            Set<Character> cols = new HashSet<>();
+            Set<Character> boxes = new HashSet<>();
+            for(int j = 0; j<board[0].length; j++){
+                //check rows
+                if(board[i][j] != '.' && !rows.add(board[i][j])) return false;
+                //check cols
+                if(board[j][i]!='.' && !cols.add(board[j][i])) return false;
+                //check 3x3 boxes
+                int boxRow = 3*(i/3);
+                int boxCol = 3*(i%3);
+                if(board[boxRow+j/3][boxCol+j%3]!='.' && !boxes.add(board[boxRow+j/3][boxCol+j%3])) return false;
+            }
+        }
+        return true;
+    }
