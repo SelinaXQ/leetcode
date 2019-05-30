@@ -1,0 +1,121 @@
+37. Sudoku solver backtracking, recursion
+(1) use backtracking. dfs. the depth is 81 for 9x9 board. 
+start from first row, for every position, if it is a number we skip it, call dfs. If it is not a number(a ‘.’), 
+we first initialize a boolean flag array to record the number has been used. Then call a function to check
+the row, column and the box the current position at and update the flag.
+then from number 1-9, to assign number to this position and call dfs recursively.
+If it jump out it means it can not found a solution, we change the current position back to ‘.’ and return false.
+* Time complexity: (9!)^9 at most
+* Space complexity:  81
+public void solveSudoku(char[][] board) {
+        dfs(board,0);
+    }
+    private boolean dfs(char[][] board, int d){
+        if(d == 81) return true;// found solution
+        int i = d/9;
+        int j = d%9;
+        if(board[i][j] != '.') return dfs(board, d+1);// prefill number skip
+        
+        boolean[] flag = new boolean[10];//it's 10 because we actually care about 1-9
+        validate(board, i, j, flag);
+        for(int k = 1; k<=9; k++){//number 1 to 9
+            if(flag[k]){//the number has not been used
+                board[i][j] = (char)('0'+k);
+                if(dfs(board, d+1)) return true;
+            }
+        }
+        board[i][j] = '.';//if can not solve, in the wrong path, change back to '.'
+        return false;
+    }
+    
+    private void validate(char[][] board, int i, int j, boolean[] flag){
+        Arrays.fill(flag, true);
+        for(int k = 0; k<9; k++){
+            //check row
+            if(board[i][k]!='.') flag[board[i][k]-'0'] = false;
+            //check column
+            if(board[k][j]!='.') flag[board[k][j] - '0'] = false;
+            int row = i/3*3+k/3;
+            int col = j/3*3+k%3;
+            //check 3x3 box
+            if(board[row][col]!='.') flag[board[row][col]-'0'] = false;
+        }
+    }
+
+38. Count and Say 不喜欢这道题
+* Time complexity: 
+* Space complexity: O(1)
+public String countAndSay(int n) {
+        if(n<=0) return "";
+        String str = "1";
+        for(int i = 1; i<n; i++){
+            int count = 0;
+            char prev = '.';
+            StringBuilder sb = new StringBuilder();
+            for(int idx = 0; idx<str.length(); idx++){
+                if(str.charAt(idx) == prev || prev =='.') count++;
+                else {
+                    sb.append(count+Character.toString(prev));
+                    count = 1;
+                }
+                prev = str.charAt(idx);
+            }
+            sb.append(count+Character.toString(prev));
+            str = sb.toString();
+        }
+        return str;
+    }
+
+39. Combination Sum backtracking array
+经典backtracking
+edge case: 
+whether we can use a number more than once?
+if the candidates array is null?
+
+sort the list first, then use backtracking every time you add a new number into it then call helper function and remove the added number.
+* Time complexity: O(2^n)
+* Space complexity:O(N) or O(N^2)
+public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        LinkedList<List<Integer>> res = new LinkedList<List<Integer>>();
+        if(candidates == null || candidates.length == 0) return res;
+        Arrays.sort(candidates);
+        helper(res, new LinkedList<Integer>(), 0, candidates, target);
+        return res;
+    }
+    private void helper(LinkedList<List<Integer>> res, LinkedList<Integer> list, int index, int[] candidates, int target){
+        if(target == 0) res.add(new LinkedList<Integer>(list));
+        else if(target>0){
+            for(int i = index; i<candidates.length; i++){
+                list.add(candidates[i]);
+                int len = list.size()-1;
+                helper(res,list,i,candidates, target-candidates[i]);
+                list.remove(len);// remove index
+            }
+        }
+    }
+
+40. Combination Sum II
+​unique combinations.
+Similar to the previous question, just consider duplicate number inside backtracking helper function
+* Time complexity: O(2^n)
+* Space complexity:O(N) or O(N^2)
+public List<List<Integer>> combinationSum2(int[] candidates, int target) {
+        List<List<Integer>> res = new ArrayList<List<Integer>>();
+        if(candidates == null || candidates.length == 0) return res;
+        Arrays.sort(candidates);
+        helper(candidates, target, res, 0, new ArrayList<Integer>());
+        return res;
+    }
+    private void helper(int[] candidates, int target, List<List<Integer>> res, int index, ArrayList<Integer> list){
+        if(target == 0) res.add(new ArrayList<Integer>(list));
+        else if(target>0){
+            for(int i = index; i<candidates.length; i++){
+                if(candidates[i]>target) break;
+                if(i!=index && candidates[i] == candidates[i-1]) continue;
+                list.add(candidates[i]);
+                int len = list.size()-1;
+                helper(candidates, target-candidates[i], res, i+1, list);
+                list.remove(len);
+            }
+        }
+    }
