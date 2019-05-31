@@ -1,0 +1,210 @@
+41. First Missing Positive array
+(1) trick solution
+The trick here is: we focus on the positive number, so if the positive number exist, we modify the number which has the index equals to number-1(the position the number represent) into it’s negative form, so when we look back, the position which has a positive number should be the number we are missing.
+But use three for loop, not very fast when run it.
+* Time complexity: O(N)
+* Space complexity: O(1)
+From 3,4,-1,1
+To     3,4,MAX,1
+To     -3,4,-MAX,-1
+
+public int firstMissingPositive(int[] nums) {
+        if(nums == null || nums.length == 0) return 1;
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] <=0) nums[i] = Integer.MAX_VALUE;
+        }
+        for(int i = 0; i<nums.length; i++){
+            int num = nums[i];
+            if(num<=nums.length) nums[num-1] = -Math.abs(nums[num-1]);
+        }
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i]>0) return i+1;
+        }
+        return nums.length+1;
+    }
+(2) swap
+Basically the same idea as (1), the number in the number-1’s position should equals to the number.
+This method beats 100%. 
+* Time complexity: O(N)
+* Space complexity: O(1)
+public int firstMissingPositive(int[] nums) {
+        for(int i = 0; i<nums.length; i++){
+            while(nums[i]>0 && nums[i]<=nums.length && nums[nums[i]-1]!=nums[i]){
+                swap(nums, i, nums[i]-1);
+            }
+        }
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i]!=i+1) return i+1;
+        }
+        return nums.length+1;
+    }
+    private void swap(int[] nums, int i, int j) {
+        int tmp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = tmp;
+    }
+
+42. Trapping rain water
+edge case: height.length<3 return 0
+The water it can contain decide by it’s left and right height and the shorter one.
+use binary search here to get leftMax and rightMax,
+if leftMax < rightMax, the amount of water is decided by leftMax and vice versa.
+* Time complexity: O(logN)
+* Space complexity: O(1)
+public int trap(int[] height) {
+        if(height == null || height.length<3) return 0;
+        int max = 0;
+        int leftMax = 0;
+        int rightMax = 0;
+        int i = 0; int j = height.length-1;
+        while(i<j){
+            leftMax = Math.max(leftMax, height[i]);
+            rightMax = Math.max(rightMax, height[j]);
+            if(leftMax<rightMax){
+                max += leftMax - height[i];
+                i++;
+            }else{
+                max += rightMax - height[j];
+                j--;
+            }
+        }
+        return max;
+    }
+
+43. Multiply Strings
+get each char and multiply them, remember to add
+* Time complexity: O(N^2)
+* Space complexity: O(m+n)
+public String multiply(String num1, String num2) {
+        if(num1.length() == 0 || num2.length() == 0) return "0";
+        int len1 = num1.length();
+        int len2 = num2.length();
+        int[] res = new int[len1+len2];
+        for(int i = len1 - 1; i>=0; i--){
+            for(int j = len2 - 1; j>=0; j--){
+                int mul = (num1.charAt(i)-'0')*(num2.charAt(j) - '0');
+                int posLow = i+j+1;
+                int posHigh = i+j;
+                mul += res[posLow];
+                res[posLow] = mul%10;
+                res[posHigh] += mul/10;
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for(int r:res){
+            if(!(sb.length() == 0 && r == 0)) sb.append(r);
+        }
+        return (sb.length() == 0)?"0" : sb.toString();
+    }
+
+44. Wildcard Matching dynamic programming, backtracking
+(1) dynamic programming
+相对来说比较容易想的dynamic programming， 
+初始state,确定第一行的值，根据p来判断，如果是*, 则和前一个状态一样
+If the two char match or p char is ‘?’, 对角；
+If p is ‘*’, 上或左；
+* Time complexity: O(n*m)
+* Space complexity: O(n*m)
+public boolean isMatch(String s, String p) {
+        if(s == null || p == null) return false;
+        boolean[][] match = new boolean[s.length()+1][p.length()+1];
+        match[0][0] = true;
+        for(int pi = 1; pi<=p.length(); pi++){
+            if(p.charAt(pi-1) == '*') match[0][pi] = match[0][pi-1];
+        }
+        
+        for(int si = 1; si<=s.length(); si++){
+            for(int pi = 1; pi<=p.length(); pi++){
+                if(s.charAt(si-1) == p.charAt(pi-1) ||
+                  p.charAt(pi-1) == '?') 
+                    match[si][pi] = match[si-1][pi-1];
+                else if(p.charAt(pi-1) == '*') 
+                    match[si][pi] = match[si-1][pi]||match[si][pi-1];
+            }
+        }
+        return match[s.length()][p.length()];
+    }
+(2) backtracking
+see comment for idea
+* Time complexity: O(min(s, p))
+* Space complexity: O(1)
+public boolean isMatch(String s, String p) {
+        int savedP = -1, savedS = -1;
+        int indexP = 0;
+        for(int indexS = 0; indexS<s.length();){
+            if(indexP<p.length() && (s.charAt(indexS) == p.charAt(indexP) || p.charAt(indexP) == '?')){
+                indexP++;
+                indexS++;
+            }else if(indexP<p.length() && p.charAt(indexP) == '*'){
+                //encounter '*', save the p and s next position, if any mismatch,we revert to the previous position
+                savedP = indexP;
+                savedS = indexS+1;//indexS+1, cause when revert, we don't need to consider current character cause it's '*'
+                indexP++;
+            }else if(savedP!=-1){// not match, revert
+                indexP = savedP;
+                indexS = savedS;
+            }else{
+                return false;
+            }
+        }
+        //examine the remaining char in the pattern, they should be '*' if any char left
+        for(int index = indexP; index<p.length(); index++){
+            if(p.charAt(index)!='*') return false;
+        }
+        return true;
+    }
+
+45. Jump Game II bfs
+(1)BFS
+* Time complexity: O(N)
+* Space complexity:O(1)
+public int jump(int[] nums) {
+        if(nums == null || nums.length <= 1) return 0;
+        int curMax = 0, nextMax = 0, step = 0, index = 0;
+        while(index<=curMax){
+            while(index<=curMax){
+                nextMax = Math.max(nextMax, index+nums[index]);
+                index++;
+            }
+            curMax = nextMax;
+            step++;
+            if(curMax>=nums.length-1) return step;
+        }
+        return 0;
+    }
+(2) greedy alg
+* Time complexity: O(N)
+* Space complexity:O(1)
+public int jump(int[] nums) {
+        if(nums == null || nums.length <= 1) return 0;
+        int res = 0, curEnd = 0, curFarest = 0;
+        for(int i = 0; i<nums.length-1; i++){
+            curFarest = Math.max(curFarest, nums[i]+i);
+            if(i == curEnd){
+                res++;
+                curEnd = curFarest;
+            }
+        }
+        return res;
+    }
+46. Permutations(distinct numbers), return all possible permutations backtracking, HashSet
+someone share backtracking: https://leetcode.com/problems/permutations/discuss/18239/A-general-approach-to-backtracking-questions-in-Java-(Subsets-Permutations-Combination-Sum-Palindrome-Partioning)
+* Time complexity: O(n x n!)
+* Space complexity: O(n!)
+public List<List<Integer>> permute(int[] nums) {
+        ArrayList<List<Integer>> res = new ArrayList<List<Integer>>();
+        if(nums.length == 0 || nums == null) return res;
+        helper(res, new ArrayList<Integer>(),nums);
+        return res;
+    }
+    private void helper(ArrayList<List<Integer>> res, ArrayList<Integer> list, int[] nums){
+        if(list.size() == nums.length) res.add(new ArrayList<Integer>(list));
+        else{
+            for(int i =0; i<nums.length; i++){
+                if(list.contains(nums[i])) continue;
+                list.add(nums[i]);
+                helper(res, list, nums);
+                list.remove(list.size()-1);
+            }
+        }
+    }
