@@ -1,0 +1,96 @@
+47. Permutations II backtracking
+Similar to (46), add a boolean used to decide whether current number has been used and 
+one more condition that current number is not equal to previous number
+* Time complexity: O(nxn!)
+* Space complexity: O(n!)
+public List<List<Integer>> permuteUnique(int[] nums) {
+        ArrayList<List<Integer>> res = new ArrayList<List<Integer>>();
+        if(nums.length == 0 || nums == null) return res;
+        Arrays.sort(nums);
+        helper(res, nums, new boolean[nums.length], new ArrayList<Integer>());
+        return res;
+    }
+    private void helper(ArrayList<List<Integer>> res, int[] nums, boolean[] used, ArrayList<Integer> list){
+        if(list.size() == nums.length) res.add(new ArrayList<Integer>(list));
+        else{
+            int preNum = nums[0] - 1;
+            for(int i = 0; i<nums.length; i++){
+                if(used[i] == false && nums[i]!=preNum){
+                    preNum = nums[i];
+                    list.add(nums[i]);
+                    used[i] = true;
+                    helper(res, nums, used, list);
+                    used[i] = false;
+                    list.remove(list.size()-1);
+                }
+            }
+        }
+    }
+
+48. Rotate image
+1 2 3
+4 5 6
+7 8 9
+
+
+rotate as different color, find the connections between left, right, top and bottom and index i.
+* Time complexity: O(N^2)
+* Space complexity: O(1)
+public void rotate(int[][] matrix) {
+        if(matrix.length<2 || matrix[0].length<2) return;
+        int m = matrix.length;
+        int left = 0;
+        int right = matrix[0].length-1;
+        int top = 0;
+        int bottom = m-1;
+        while(m>1){
+            for(int i = 0; i<m-1; i++){
+                int temp = matrix[top][left+i];
+                matrix[top][left+i] = matrix[bottom-i][left];
+                matrix[bottom-i][left] = matrix[bottom][right-i];
+                matrix[bottom][right-i] = matrix[top+i][right];
+                matrix[top+i][right] = temp;
+            }
+            top++;
+            left++;
+            bottom--;
+            right--;
+            m = m-2;//every time modify two rows;
+        }
+    }
+
+49. Group Anagrams HashMap
+For every str, we first use toCharArray() get a array and sort it. Then decide whether it can be put into the map with a new key and
+add it into related key.
+* Time complexity: O(NKlogN)
+* Space complexity: O(NK)
+public List<List<String>> groupAnagrams(String[] strs) {
+        ArrayList<List<String>> res = new ArrayList<List<String>>();
+        if(strs.length == 0 || strs == null) return res;
+        Map<String, ArrayList<String>> map = new HashMap<>();
+        for(int i = 0; i<strs.length; i++){
+            char[] curr = strs[i].toCharArray();
+            Arrays.sort(curr);
+            String key = String.valueOf(curr);
+            if(!map.containsKey(key)) map.put(key, new ArrayList<String>());
+            map.get(key).add(strs[i]);
+        }
+        return new ArrayList<List<String>>(map.values());
+    }
+
+50. Pow(x,n)
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public double myPow(double x, int n) {
+        if(n == 0 || x == 1) return 1;
+        if(n == 1) return x;
+        if(n<0) return 1/(x*myPow(x, -(n+1)));//overflow, avoid MIN_VALUE case
+        double res = 1;
+        while(n>1){
+            if(n%2 == 1) res *= x;// 1*x^(n-1)
+            x = x*x;
+            n /= 2;
+        }
+        res *= x;// x*x^(n-1)
+        return res;
+    }
