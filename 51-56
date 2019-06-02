@@ -1,0 +1,181 @@
+51. N-Queens backtracking
+Using boolean array.
+The logic behind using a 1D boolean array to represent a diagonal is this:
+
+Any point in the matrix is part of two diagonals that cut through it. One from its top-left-ish to its bottom-right-ish and another from top-right-ish to its bottom-left-ish.
+
+For Example , we have the given 2D board:
+
+(0,0) (0,1) (0,2) (0,3)
+
+(1,0) (1,1) (1,2) (1,3)
+
+(2,0) (2,1) (2,2) (2,3)
+
+(3,0) (3,1) (3,2) (3,3)
+where the (x,y) represents the position in the board.
+
+Now lets just take a point (1,2). Now the two diagonals that pass through it are :
+1. Through the points (0,1) (1,2) (2,3). These points are considered for d1 boolean array. If we look at any point in this set, x-y is the same. 0-1 == 1-2 == 2-3. Hence i-j + board.length will give the same index in d1 for all its diagonal elements,since i-j will be the same.
+2. Through the points (0,3) (1,2) (2,1) (3,0) . These points are considered for the d2 boolean array. Now if you look at the points , the sum of x and y coordinates is the same for all points. Hence 2board.length -i-j-1 == 2board.length -(i+j) -1 which will be the same for all the points in the diagonal. Hence if the idx in d2 is true already , that would mean some point in the diagonal already had a queen.
+
+For the code, we can use d1=rowCur+j d2=j-rowCur+n-1, it's more easy to understand.
+For every element arr[i][j] in diag line with positive slope,
+i+j is the same,it range from 0 to 2*(n-1).
+And for every element arr[i][j] in diag line with negative slope,
+j-i is the same,
+it range from -(n-1) to n-1,
+we add n-1 to make the range from 0 to 2*(n-1).
+* Time complexity: O(n!)
+* Space complexity: O(n)
+public List<List<String>> solveNQueens(int n) {
+        List<List<String>> res = new ArrayList<>();
+        if(n<1) return res;
+        helper(res, new ArrayList<String>(), n, 0, new boolean[n], new boolean[2*n], new boolean[2*n]);
+        return res;
+    }
+    public void helper(List<List<String>> res, List<String> list, int n, int rowCur, boolean[] col, boolean[] diag1, boolean[] diag2){
+        if(rowCur == n) {
+            res.add(new ArrayList<String>(list));
+            return;
+        }
+        for(int j = 0; j<n; j++){
+            int d1 = rowCur+j;
+            int d2 = j - rowCur + n - 1;
+            if(!col[j] && !diag1[d1] && !diag2[d2]){
+                col[j] = true;
+                diag1[d1] = true;
+                diag2[d2] = true;
+                char[] helperChars = new char[n];
+                Arrays.fill(helperChars,'.');
+                helperChars[j] = 'Q';
+                list.add(new String(helperChars));
+                
+                helper(res, list, n, rowCur+1, col, diag1, diag2);
+                
+                col[j] = false;
+                diag1[d1] = false;
+                diag2[d2] = false;
+                list.remove(list.size()-1);
+            }
+        }
+        
+    }
+
+52. N-Queens II backtracking
+Similar to 51. 
+* Time complexity: O(n!)
+* Space complexity: O(n)
+
+int res = 0;
+    public int totalNQueens(int n) {
+        if(n<1) return res;
+        helper(n, 0, new boolean[n], new boolean[2*n], new boolean[2*n]);
+        return res;
+    }
+     public void helper(int n, int rowCur, boolean[] col, boolean[] diag1, boolean[] diag2){
+        if(rowCur == n) {
+            res++;
+            return;
+        }
+        for(int j = 0; j<n; j++){
+            int d1 = rowCur+j;
+            int d2 = j - rowCur + n - 1;
+            if(col[j] || diag1[d1] || diag2[d2]){
+                continue;
+            }
+            col[j] = true;
+            diag1[d1] = true;
+            diag2[d2] = true;
+         
+            helper(n, rowCur+1, col, diag1, diag2);
+                
+            col[j] = false;
+            diag1[d1] = false;
+            diag2[d2] = false;
+        }
+     }
+
+53. Maximum Subarray array
+Use maxToCurr to decide whether the current number is worth to be count in.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int maxSubArray(int[] nums) {
+        int maxToCurr = nums[0];
+        int sum = nums[0];
+        for(int i = 0; i<nums.length; i++){
+            maxToCurr = Math.max(maxToCurr+nums[i], nums[i]);
+            sum = Math.max(sum, maxToCurr);
+        }
+        return sum;
+    }
+
+54. Spiral matrix 2d array matrix
+Similar to rotate image, iterate layer by layer
+1,1,1,1,1,1
+1,1,1,1,1,1
+1,1,1,1,1,1
+1,1,1,1,1,1
+1,1,1,1,1,1
+* Time complexity: O(row*col)
+* Space complexity: O(1)
+public List<Integer> spiralOrder(int[][] matrix) {
+        List<Integer> res = new ArrayList<Integer>();
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return res;
+        int left = 0, right = matrix[0].length-1;
+        int top = 0, bottom = matrix.length - 1;
+        while(left<right && top<bottom){
+            for(int i = left; i<right; i++) res.add(matrix[top][i]);
+            for(int i = top; i<bottom; i++) res.add(matrix[i][right]);
+            for(int i = right; i>left; i--) res.add(matrix[bottom][i]);
+            for(int i = bottom; i>top; i--) res.add(matrix[i][left]);
+            left++; right--; top++; bottom--;
+        }
+        if(top == bottom) for(int i = left; i<=right; i++) res.add(matrix[top][i]);
+        else if(left == right) for(int i = top; i<=bottom; i++) res.add(matrix[i][left]);
+        return res;
+    }
+
+55. Jump Game array
+Reach represent the index the current position can reach to
+* Time complexity:O(n)
+* Space complexity: O(1)
+public boolean canJump(int[] nums) {
+        if(nums.length<=1) return true;
+        int reach = 0;
+        int i = 0;
+        for(i = 0; i<nums.length && i<=reach; i++){
+            reach = Math.max(i+nums[i],reach);
+            if(reach>=nums.length-1) return true;
+        }
+        return false;
+    }
+
+56. Merge Intervals 2d array
+Get the start and end number separately, then sort them.
+For every start point we get, we compare start[i+1] with end[i], if start[i+1]>end[i], it means this is a new interval we should record.
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+
+public int[][] merge(int[][] intervals) {
+        if(intervals.length <= 1) return intervals;
+        List<int[]> res = new ArrayList<>();
+        
+        int[] start = new int[intervals.length];
+        int[] end = new int[intervals.length];
+        for(int i = 0; i<intervals.length; i++){
+            start[i] = intervals[i][0];
+            end[i] = intervals[i][1];
+        }
+        Arrays.sort(start);
+        Arrays.sort(end);
+        int i = 0;
+        while(i<intervals.length){
+            int st = start[i];
+            while(i<intervals.length-1 && start[i+1]<=end[i]) i++;
+            int en = end[i];
+            res.add(new int[]{st,en});
+            i++;
+        }
+        return res.toArray(new int[0][]);
+    }
