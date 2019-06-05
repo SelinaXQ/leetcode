@@ -1,0 +1,100 @@
+61. Rotate List linkedlist
+(1) two pointers.
+Get length of list first and use mode to get k.
+With the help of fast and slow pointers, we can get the start and end position of the sub list that needed to be rotate.
+* Time complexity: O(n)
+* Space complexity: O(1)
+
+public ListNode rotateRight(ListNode head, int k) {
+        if(head == null || k == 0) return head;
+        int len = 0;
+        ListNode curr = head;
+        ListNode fast = head;
+        ListNode slow = head;
+        while(curr!=null){
+            len++;
+            curr = curr.next;
+        }
+        if(k>len) k = k%len;
+        if(k == 0||k == len) return head;
+        
+        for(int i = 0; i<k; i++){
+            fast = fast.next;
+        }
+        while(fast.next!=null){
+            fast = fast.next;
+            slow = slow.next;
+        }
+        ListNode newHead = slow.next;
+        fast.next = head;
+        slow.next = null;
+        return newHead;
+    }
+
+62. Unique Path dynamic programming
+Easy dynamic programming, initialize first row and first column as 1 then for every row and column, it’s value equals to
+it’s upper and left position’s value.
+* Time complexity: O(m*n)
+* Space complexity: O(m*n)
+public int uniquePaths(int m, int n) {
+        int[][] dp = new int[m][n];
+        for(int i = 0; i<m; i++){
+            dp[i][0] = 1;
+        }
+        for(int i = 0; i<n; i++){
+            dp[0][i] = 1;
+        }
+        for(int i = 1; i<m; i++){
+            for(int j = 1; j<n; j++){
+                dp[i][j] = dp[i][j-1]+dp[i-1][j];
+            }
+        }
+        return dp[m-1][n-1];
+    }
+
+63. Unique path with obstacle dynamic programming
+Change numbers in place, note the row part
+* Time complexity: O(m*n)
+* Space complexity: O(1)
+public int uniquePathsWithObstacles(int[][] obstacleGrid) {
+        int m = obstacleGrid.length;
+        int n = obstacleGrid[0].length;
+        for(int i = 0; i<m; i++){ //column
+            if(obstacleGrid[i][0]!=1) obstacleGrid[i][0] = 1;
+            else {
+                for(int j = i; j<m; j++) obstacleGrid[j][0] = 0;
+                break;
+            }
+        }
+        for(int i = 1; i<n; i++){ //row, start from 1, it 1, change it to 0, else it’s status should be equal to previous position
+            if(obstacleGrid[0][i] == 1) obstacleGrid[0][i] = 0;
+            else obstacleGrid[0][i] = obstacleGrid[0][i-1];
+        }
+        
+        for(int i = 1; i<m; i++){
+            for(int j = 1; j<n; j++){
+                if(obstacleGrid[i][j]!=1) obstacleGrid[i][j] = obstacleGrid[i-1][j]+obstacleGrid[i][j-1];
+                else obstacleGrid[i][j] = 0;
+            }
+        }
+        return obstacleGrid[m-1][n-1];
+    }
+
+64. Minimum Path Sum dynamic programming
+Similar to unique path, also dynamic programming, make [0][0] unchanged, and initialize first row and column,
+for later position, find the minimum of upper and left and add it up.
+* Time complexity: O(m*n)
+* Space complexity:O(1)
+public int minPathSum(int[][] grid) {
+        int m = grid.length;
+        int n = grid[0].length;
+        for(int i = 1; i<m; i++) grid[i][0] += grid[i-1][0];
+        for(int j = 1; j<n; j++) grid[0][j] += grid[0][j-1];
+        for(int i = 1; i<m; i++){
+            for(int j = 1; j<n; j++){
+                grid[i][j] += Math.min(grid[i-1][j], grid[i][j-1]);
+            }
+        }
+        return grid[m-1][n-1];
+    }
+
