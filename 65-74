@@ -1,0 +1,317 @@
+65. Valid Number
+several condition together.
+* Time complexity: O(N)
+* Space complexity: O(1)
+public boolean isNumber(String s) {
+        if(s==null || s.length() == 0) return false;
+        s = s.trim();
+        if(s==null||s.length() == 0) return false;
+        int i = 0;
+        int n = s.length();
+        if(i<n && (s.charAt(i) == '+' || s.charAt(i) == '-')) i++; //negative or positive
+        boolean isDigits = false;
+        //it's digit
+        while(i<n && Character.isDigit(s.charAt(i))){
+            i++; isDigits = true;
+        }
+        //after '.' is nothing or is also digit
+        if(i<n && s.charAt(i) == '.'){
+            i++;
+            while(i<n && Character.isDigit(s.charAt(i))){
+                isDigits = true;
+                i++;
+            }
+        }
+        //if e, after e should have digit and it's valid digit before
+        //e+12
+        if(i<n && s.charAt(i) == 'e' && isDigits){
+            i++;
+            isDigits = false;
+            if(i<n && (s.charAt(i) == '+' || s.charAt(i) == '-')) i++; 
+            while(i<n && Character.isDigit(s.charAt(i))){
+            i++; isDigits = true;
+            }
+        }
+        return isDigits && i == s.length();//also check length
+    }
+
+66. Plus One array
+Start from the last position, if it is smaller than 9, add 1 to it and return digits.
+The edge case is when all number is 9, the length should be len+1. If we don’t return in the for loop, we create a new array and put 1 in the first place.
+* Time complexity: O(n) in worst case
+* Space complexity: O(1)  or O(n+1)
+public int[] plusOne(int[] digits) {
+        if(digits == null || digits.length == 0) return digits;
+        int len = digits.length;
+        for(int i = len-1; i>=0; i--){
+            if(digits[i]<9){
+                digits[i]+=1;
+                return digits;
+            }else digits[i] = 0;
+        }
+        int[] res = new int[len+1];
+        res[0] = 1;
+        return res;
+    }
+
+67. Add binary String StringBuilder
+Start from last position, while one of them’s length is larger or equal to zero, we get the number and add them up and the remainder. 
+we append sum%2, If it is 1, we append 1, If it is 2, we append 0
+To update the remainder, we sum/2. If it is 1, the remainder is 0. If it is 0, the remainder is 1.
+At last, if remainder is not 0, we append remainder.
+In order to output the result we need to reverse() the string first and change it to string.
+* Time complexity: O(max(m,n))
+* Space complexity: O(1)
+public String addBinary(String a, String b) {
+        StringBuilder sb = new StringBuilder();
+        int i = a.length()-1;
+        int j = b.length()-1;
+        int remainder = 0;
+        while(i>=0||j>=0){
+            int sum = remainder;
+            if(i>=0) sum+=a.charAt(i)-'0';
+            if(j>=0) sum+=b.charAt(j)-'0';
+            sb.append(sum%2);//1->1 2->0
+            remainder = sum/2;//1->0; 2->1
+            i--;
+            j--;
+        }
+        if(remainder!=0) sb.append(remainder);
+        return sb.reverse().toString();
+    }
+
+68. Text Justification string
+* Time complexity: O(n)
+* Space complexity: O(n)
+public List<String> fullJustify(String[] words, int maxWidth) {
+        List<String> res = new ArrayList<>();
+        int index = 0;
+        while(index<words.length){
+            int count = words[index].length();
+            int last = index+1;
+            while(last<words.length){
+                if(words[last].length()+count+1 > maxWidth) break;
+                count += 1+words[last].length();
+                last++;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append(words[index]);
+            int diff = last - index - 1;// diff->remained words
+            //If the last word or diff == 0, like "shall be        "
+            if(last == words.length || diff == 0){
+                for(int i = index+1; i<last; i++){
+                    sb.append(" ");
+                    sb.append(words[i]);
+                }
+                for(int i = sb.length(); i<maxWidth; i++) sb.append(" ");
+            }else{//the space between each number is larger than 1
+                int spaces = (maxWidth - count)/diff;
+                int r = (maxWidth - count)%diff;//如果是单数的话，整除不了
+                for(int i = index+1; i<last; i++){
+                    for(int k = spaces; k>0; k--) sb.append(" ");//先加spaces - 1 个空格
+                    if(r>0){
+                        sb.append(" ");
+                        r--;
+                    }
+                    sb.append(" ");
+                    sb.append(words[i]);
+                }
+            }
+            res.add(sb.toString());
+            index = last;
+        }
+        return res;
+    }
+
+69. Sqrt(x)
+edge case: 
+x<=0, return 0;
+(1) Binary search:
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+public int mySqrt(int x) {
+        if(x<=0) return 0;
+        int low = 1, high = x;
+        while(low<=high){
+            long mid = low+(high-low)/2;
+            if(mid*mid == x) return (int)mid;
+            else if(mid*mid<x) low = (int)mid+1;
+            else high = (int)mid-1;
+        }
+        if(high*high<x) return (int)high;
+        else return (int)low;
+    }
+(2)Newton method
+* Time complexity: ???
+* Space complexity: O(1)
+public int mySqrt(int x) {
+        long res = x;
+        while(res*res > x){
+            res = (res+x/res)/2;
+        }
+        return (int)res;
+    }
+
+70. Climbing Stairs dynamic programming
+* Time complexity: O(n)
+* Space complexity: O(n)
+dp[i] = dp[i-1]+dp[i-2]
+public int climbStairs(int n) {
+        if(n == 1) return 1;
+        if(n == 2) return 2;
+        int[] dp = new int[n];
+        dp[0] = 1; dp[1] = 2;
+        for(int i = 2; i<n; i++){
+            dp[i] = dp[i-1]+dp[i-2];
+        }
+        return dp[n-1];
+    }
+
+71. Simplify Path Stack, String
+edge case: length <=1 or null
+split the string with ‘/‘ first, for every sub string, if it is “..” and stack is not empty, we pop.
+If it is not “.” and the current sub string is not empty( it must be a,b,c,…), we push it into stack.
+Finally, it stack is empty, we return /
+else, we add a “/“ and current string into result string.
+* Time complexity: O(n)
+* Space complexity: O(m: number of sub string)
+
+public String simplifyPath(String path) {
+        if(path == null || path.length() <= 1) return path;
+        String[] each = path.split('/');
+        Stack<String> stack = new Stack<>();
+        for(String curr: each){
+            if(curr.equals("..")) if(!stack.empty()) stack.pop();
+            else if(!curr.equals('.') && !curr.isEmpty()) stack.push(curr);
+        }
+        String result = "";
+        if(stack.empty()) return "/";
+        while(!stack.isEmpty()){
+            String newPop = stack.pop;
+            result = "/"+newPop+result;
+        }
+        return result;
+    }
+
+72. Edit Distance dynamic programming
+Let following be the function definition :-
+f(i, j) := minimum cost (or steps) required to convert first i characters of word1 to first j characters of word2
+Case 1: word1[i] == word2[j], i.e. the ith the jth character matches.
+f(i, j) = f(i - 1, j - 1)
+Case 2: word1[i] != word2[j], then we must either insert, delete or replace, whichever is cheaper
+f(i, j) = 1 + min { f(i, j - 1), f(i - 1, j), f(i - 1, j - 1) }
+1. f(i, j - 1) represents insert operation
+2. f(i - 1, j) represents delete operation
+3. f(i - 1, j - 1) represents replace operation
+Here, we consider any operation from word1 to word2. It means, when we say insert operation, we insert a new character after word1 that matches the jth character of word2. So, now have to match i characters of word1 to j - 1 characters of word2. Same goes for other 2 operations as well.
+Note that the problem is symmetric. The insert operation in one direction (i.e. from word1 to word2) is same as delete operation in other. So, we could choose any direction.
+Above equations become the recursive definitions for DP.
+* Time complexity: O(m*n)
+* Space complexity: O(m*n)
+
+public int minDistance(String word1, String word2) {
+        int m = word1.length();
+        int n = word2.length();
+        
+        int[][] dis = new int[m+1][n+1];
+        for(int i = 0; i<=m; i++) dis[i][0] = i;
+        for(int j = 0; j<=n; j++) dis[0][j] = j;
+        
+        for(int i = 0; i<m; i++){
+            for(int j = 0; j<n; j++){
+                if(word1.charAt(i) == word2.charAt(j)) dis[i+1][j+1] = dis[i][j];
+                else{
+                    int replace = dis[i][j];
+                    int delete = dis[i][j+1];
+                    int insert = dis[i+1][j];
+                    dis[i+1][j+1] = Math.min(replace, Math.min(delete, insert))+1;
+                }
+            }
+        }
+        return dis[m][n];
+    }
+
+73. Set Matrix Zeros 2d array
+Consider first row and first column first.
+For every row and column, if 0, set the position in first row and column as 0, we only need to look up first row and first column later and set the whole row and column as 0.
+* Time complexity: O(m*n)
+* Space complexity: O(1)
+
+public void setZeroes(int[][] matrix) {
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return;
+        int m = matrix.length;
+        int n = matrix[0].length;
+        boolean firstRowZero = false;
+        boolean firstColZero = false;
+        for(int i = 0; i<m; i++){
+            if(matrix[i][0] == 0){
+                firstColZero = true;
+                break;
+            }
+        }
+        for(int j = 0; j<n; j++){
+            if(matrix[0][j] == 0){
+                firstRowZero = true;
+                break;
+            }
+        }
+        for(int i = 1; i<m; i++){
+            for(int j = 1; j<n; j++){
+                if(matrix[i][j] == 0){
+                    matrix[i][0] = 0;
+                    matrix[0][j] = 0;
+                }
+            }
+        }
+        for(int i = 1; i<m; i++){
+            if(matrix[i][0] == 0){
+                for(int j = 1; j<n; j++){
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+        for(int j = 1; j<n; j++){
+            if(matrix[0][j] == 0){
+                for(int i = 1; i<m; i++){
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+        if(firstRowZero){
+            for(int i = 0; i<n; i++) matrix[0][i] = 0;
+        }
+        if(firstColZero){
+            for(int j = 0; j<m; j++) matrix[j][0] = 0;
+        }    
+    }
+
+74. Search a 2D Matrix binary search
+* Time complexity: O(logm*logn)
+* Space complexity: O(1)
+
+public boolean searchMatrix(int[][] matrix, int target) {
+        if(matrix == null || matrix.length == 0||matrix[0].length == 0) return false;
+        int startRow = 0;
+        int endRow = matrix.length - 1;
+        int endCol = matrix[0].length-1;
+        int row = -1;
+        while(startRow+1<endRow){
+            int mid = startRow + (endRow-startRow)/2;
+            if(matrix[mid][endCol]<target) startRow = mid;
+            else endRow = mid;
+        }
+        if(matrix[startRow][endCol] >= target) row = startRow;
+        else if(matrix[endRow][endCol] >= target) row = endRow;
+        else return false;
+        
+        int start = 0;
+        int end = endCol;
+        while(start+1<end){
+            int mid = start+(end-start)/2;
+            if(matrix[row][mid]<target) start=mid;
+            else end = mid;
+        }
+        if(matrix[row][start] == target || matrix[row][end] == target) return true;
+        else return false;
+        
+    }
