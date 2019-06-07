@@ -1,0 +1,400 @@
+81. Search in Rotated Sorted Array II
+* This is a follow up problem to Search in Rotated Sorted Array, where nums may contain duplicates.
+Binary search. kind of change the conditions
+* Time complexity: O(logn) worst: O(n)
+* Space complexity: O(1)
+
+public boolean search(int[] nums, int target) {
+        if(nums == null || nums.length == 0) return false;
+        int start = 0, end = nums.length-1;
+        int mid;
+        while(start+1<end){
+            mid = start + (end-start)/2;
+            if(nums[mid] == target) return true;
+            if(nums[mid] > nums[start]){
+                if(nums[start]<=target && nums[mid] >= target) end = mid;
+                else start = mid;
+            }else if(nums[mid] < nums[start]){
+                if(nums[end]>=target && nums[mid]<=target) start = mid;
+                else end = mid;
+            }else start++; // handle duplicates
+            
+        }
+        if(nums[start] == target) return true;
+        if(nums[end] == target) return true;
+        return false;
+    }
+
+
+82. Remove Duplicates from Sorted List II listnode
+Record the prev node, compare the prev.next and prev.next.next’s value, leave the same node behind.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public ListNode deleteDuplicates(ListNode head) {
+        if(head == null || head.next == null) return head;
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode prev = dummy;
+        while(prev.next!=null && prev.next.next!=null){
+            if(prev.next.val == prev.next.next.val){
+                int val = prev.next.val;
+                while(prev.next!=null && prev.next.val == val) prev.next = prev.next.next;
+            }else prev = prev.next;
+        }
+        return dummy.next;
+    }
+
+
+83. Remove Duplicates from Sorted List listnode
+Using two node slow and fast to jump out duplicate node. 
+* Time complexity:O(n)
+* Space complexity:O(1)
+public ListNode deleteDuplicates(ListNode head) {
+        if(head == null) return head;
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode slow = head;
+        ListNode fast = head.next;
+        while(fast!=null){
+            if(fast.val != slow.val){
+                slow = slow.next;
+                fast = fast.next;
+            }else{
+                fast = fast.next;
+                slow.next = fast;
+            }
+        }
+        return dummy.next;
+    }
+
+84. Largest Rectangle in Histogram array
+(1) two round
+For every height, compute the rectangle and compare them. Decide by the minimum height.
+* Time complexity: O(N^2)
+* Space complexity: O(1)
+public int largestRectangleArea(int[] heights) {
+        if(heights == null || heights.length == 0) return 0;
+        if(heights.length == 1) return heights[0];
+        int max = 0;
+        for(int curr = 0; curr<heights.length; curr++){
+            if(curr == heights.length-1 || heights[curr]>heights[curr+1]){
+                int minHeight = heights[curr];
+                for(int idx = curr; idx>=0; idx--){
+                    minHeight = Math.min(minHeight, heights[idx]);
+                    max = Math.max(max, minHeight*(curr-idx+1));
+                }
+            }
+        }
+        return max;
+    }
+(2) One round slower when actually run??
+Using stack, space exchange time
+Keep pushing the index of heights into stack, until we find a height that is smaller than previous one.
+* Time complexity: not O(n)
+* Space complexity: O(n) at most
+public int largestRectangleArea(int[] heights) {
+        if(heights == null || heights.length == 0) return 0;
+        int max = 0;
+        Stack<Integer> stack = new Stack<Integer>();
+        for(int curr = 0; curr < heights.length; curr++){
+            if(stack.isEmpty() || heights[curr] >= heights[stack.peek()]){
+                stack.push(curr);
+            }else{
+                int right = curr;
+                int index = stack.pop();
+                while(!stack.isEmpty() && heights[index] == heights[stack.peek()]){
+                    index = stack.pop();
+                }
+                int leftMost = (stack.isEmpty())?-1:stack.peek();
+                max = Math.max(max, (right-leftMost-1)*heights[index]);
+                curr--;
+            }
+        }
+        int rightMost = stack.peek()+1;
+        while(!stack.isEmpty()){
+            int index = stack.pop();
+            int left = (stack.isEmpty())?-1:stack.peek();
+            max = Math.max(max, (rightMost-left-1)*heights[index]);
+        }
+        return max;
+    }
+(2)’ better version with stack also very slow
+* Time complexity: not O(n)
+* Space complexity: O(n)
+public int largestRectangleArea(int[] heights) {
+        Stack < Integer > stack = new Stack < > ();
+        stack.push(-1);
+        int maxarea = 0;
+        for (int i = 0; i < heights.length; ++i) {
+            while (stack.peek() != -1 && heights[stack.peek()] >= heights[i])
+                maxarea = Math.max(maxarea, heights[stack.pop()] * (i - stack.peek() - 1));
+            stack.push(i);
+        }
+        while (stack.peek() != -1)
+            maxarea = Math.max(maxarea, heights[stack.pop()] * (heights.length - stack.peek() -1));
+        return maxarea;
+    }
+85. Maximal Rectangle
+(1) compute the heights for each column, if it is 1, heights++, else modify it as 0.
+And then use 84 to compute area.
+* Time complexity: O(n^4)
+* Space complexity: O(col)
+public int maximalRectangle(char[][] matrix) {
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return 0;
+        int row = matrix.length;
+        int col = matrix[0].length;
+        int[] heights = new int[col];
+        int max = 0;
+        for(int i = 0; i<row; i++){
+            for(int j = 0; j<col; j++){
+                if(matrix[i][j] == '1') heights[j]++;
+                else heights[j] = 0;
+            }
+            int area = largestRectangleArea(heights);
+            max = Math.max(max, area);
+        }
+        return max;
+    }
+    public int largestRectangleArea(int[] heights) {
+
+        if(heights == null || heights.length == 0) return 0;
+        int max = 0;
+        for(int curr = 0; curr< heights.length; curr++){
+            if(curr == heights.length-1 || heights[curr] > heights[curr+1]){
+                int minHeight = heights[curr];
+                for(int idx = curr; idx>=0; idx--){
+                    minHeight = Math.min(minHeight, heights[idx]);
+                    max = Math.max(max,minHeight*(curr-idx+1));
+                }
+            }
+        }
+        return max;
+        
+    }
+(2) dynamic programming
+Algorithm
+Given row matrix[i], we keep track of the h, l, and r of each point in the row by defining three arrays - height, left, and right.
+height[j] will correspond to the height of matrix[i][j], and so on and so forth with the other arrays.
+The question now becomes how to update each array.
+Height:
+This one is easy. h is defined as the number of continuous ones in a line from our point. We explored how to compute this in Approach 2 in one row with:
+row[j] = row[j - 1] + 1 if row[j] == '1'
+We can just make a minor modification for it to work for us here:
+new_height[j] = old_height[j] + 1 if row[j] == '1' else 0
+Left:
+Consider what causes changes to the left bound of our rectangle. Since all instances of zeros occurring in the row above the current one have already been factored into the current version of left, the only thing that affects our left is if we encounter a zero in our current row.
+As a result we can define:
+new_left[j] = max(old_left[j], cur_left)
+cur_left is one greater than rightmost occurrence of zero we have encountered. When we "expand" the rectangle to the left, we know it can't expand past that point, otherwise it'll run into the zero.
+Right:
+Here we can reuse our reasoning in left and define:
+new_right[j] = min(old_right[j], cur_right)
+cur_right is the leftmost occurrence of zero we have encountered. For the sake of simplicity, we don't decrement cur_right by one (like how we increment cur_left) so we can compute the area of the rectangle with height[j] * (right[j] - left[j]) instead of height[j] * (right[j] + 1 - left[j]).
+This means that technically the base of the rectangle is defined by the half-open interval [l, r) instead of the closed interval [l, r], and right is really one greater than right boundary. Although the algorithm will still work if we don't do this with right, doing it this way makes the area calculation a little cleaner.
+Note that to keep track of our cur_right correctly, we must iterate from right to left, so this is what is done when updating right.
+With our left, right, and height arrays appropriately updated, all that there is left to do is compute the area of each rectangle.
+Since we know the bounds and height of rectangle j, we can trivially compute it's area with height[j] * (right[j] - left[j]), and change our max_area if we find that rectangle j's area is greater.
+* Time complexity: O(n*m)
+* Space complexity: O(n)
+public int maximalRectangle(char[][] matrix) {
+        if(matrix.length == 0) return 0;
+        int m = matrix.length;
+        int n = matrix[0].length;
+        
+        int[] left = new int[n];
+        int[] right = new int[n];
+        int[] height = new int[n];
+        
+        Arrays.fill(right,n);
+        
+        int maxArea = 0;
+        for(int i = 0; i<m; i++){
+            int curLeft = 0, curRight = n;
+            //update height;
+            for(int j = 0; j<n; j++){
+                if(matrix[i][j] == '1') height[j]++;
+                else height[j] = 0;
+            }
+            //update left
+            for(int j = 0; j<n; j++){
+                if(matrix[i][j] == '1') left[j] = Math.max(left[j], curLeft);
+                else {
+                    left[j] = 0; curLeft = j+1;
+                }
+            }
+            //update right
+            for(int j = n-1; j>=0; j--){
+                if(matrix[i][j] == '1') right[j] = Math.min(right[j],curRight);
+                else{
+                    right[j] = n; curRight = j;
+                }
+            }
+            //update area
+            for(int j = 0; j<n; j++){
+                maxArea = Math.max(maxArea, (right[j]-left[j])*height[j]);
+            }
+        }
+        return maxArea;
+    }
+86. Partition List linkedlist
+Using left, prev and curr to modify.
+* Time complexity: O(n)
+* Space complexity: O(1)
+example: x= 2
+
+special case, prev == left
+
+if curr.val<x, move left, prev and curr
+else only move prev and curr, cause the boundary of left don’t need to be changed.
+public ListNode partition(ListNode head, int x) {
+        if(head == null) return head;
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode left = dummy;
+        ListNode prev = dummy;
+        ListNode curr = head;
+        while(curr!=null){
+            if(prev == left){//special case, when prev == left
+                if(curr.val<x){
+                    left = left.next;
+                }
+                prev = curr;
+                curr = curr.next;
+            }else{
+                if(curr.val>=x){
+                    prev = curr;
+                    curr = curr.next;
+                }else{
+                    prev.next = curr.next;
+                    curr.next = left.next;
+                    left.next = curr;
+                    left = left.next;
+                    curr = prev.next;
+                }
+            }
+        }
+        return dummy.next;
+    }
+
+87. Scramble String
+(1) recursion
+* Time complexity: ???
+* Space complexity:O(n)
+public boolean isScramble(String s1, String s2) {
+        if(s1 == null || s2 == null || s1.length()!=s2.length()) return false;
+        if(s1.length() == 1 && s1.equals(s2)) return true;
+        char[] s1char = s1.toCharArray();
+        char[] s2char = s2.toCharArray();
+        Arrays.sort(s1char);
+        Arrays.sort(s2char);
+        String str1 = new String(s1char);
+        String str2 = new String(s2char);
+        if(!str1.equals(str2)) return false;
+        for(int length = 1; length<s1.length(); length++){
+            String s1Left = s1.substring(0,length);
+            String s1Right = s1.substring(length, s1.length());
+            String s2Left = s2.substring(0,length);
+            String s2Right = s2.substring(length, s2.length());
+            if((isScramble(s1Left,s2Left)&& isScramble(s1Right, s2Right)) ||
+              (isScramble(s1Left, s2.substring(s2.length()-length,s2.length())) && isScramble(s1Right, s2.substring(0,s2.length()-length)))) return true;
+        }
+        return false;
+    }
+(2) recursion 
+Similar to upper solution, no sorting step so much faster
+* The base case that s1 can scramble into s2 if s1== s2. If the frequencies of each characters appearing in s1 and s2 differ, then s1 can not scramble into s2.
+* If there exist 0 <= i <= s1.length() where
+    * s1[0,i] can scramble into s2[0,i] and s1[i,length] can scramble into s2[i, length]; or
+    * s1[0,i] can scramble into s2[length - i, length] and s1[i,length] can scramble into s2[0, length - i]
+then, s1 can scramble into s2.
+* Time complexity: O(n)?? NOT SURE!!
+* Space complexity: O(26)
+public boolean isScramble(String s1, String s2) {
+        if( s1.equals(s2) )
+        return true;
+    int s1Array[] = new int[26];
+    int s2Array[] = new int[26];
+    for(int i = 0; i < s1.length(); i++) {
+        s1Array[s1.charAt(i) - 'a']++;
+        s2Array[s2.charAt(i) - 'a']++;
+    }
+    for(int i = 0; i < 26; i++)
+        if( s1Array[i] != s2Array[i] )
+            return false;
+    for(int i = 1; i < s1.length(); i++) {
+        if( isScramble(s1.substring(0, i), s2.substring(0, i))
+            && isScramble(s1.substring(i), s2.substring(i)) )
+            return true;
+        if( isScramble(s1.substring(0, i), s2.substring(s1.length() - i))
+            && isScramble(s1.substring(i), s2.substring(0, s1.length() - i)))
+            return true;
+    }
+    return false;
+    }
+
+88. Merge sorted array
+(1) With sorting
+* Time complexity: O((n+m)log(n+m))
+* Space complexity:O(1)
+public void merge(int[] nums1, int m, int[] nums2, int n) {
+        for(int i = m; i<=m+n-1; i++){
+            nums1[i] = nums2[i-m];
+        }
+        Arrays.sort(nums1);
+    }
+(2) In place two pointers start from the end
+* Time complexity: O(m+n)
+* Space complexity: O(1)
+public void merge(int[] nums1, int m, int[] nums2, int n) {
+        int p1 = m-1;
+        int p2 = n-1;
+        int p = m+n-1;
+        while(p1>=0 && p2>=0){
+            nums1[p--] = (nums1[p1] < nums2[p2])?nums2[p2--]:nums1[p1--];
+        }
+//add the rest number in nums2 into nums1, they are all smaller than nums1's number
+        System.arraycopy(nums2,0,nums1,0,p2+1);
+    }
+
+89. Gray Code
+* Time complexity: O(2^n)
+* Space complexity: O(1)
+ public List<Integer> grayCode(int n) {
+        if(n == 0){
+            List<Integer> res = new ArrayList<Integer>();
+            res.add(0);
+            return res;
+        }
+        List<Integer> res = grayCode(n-1);
+        //every time add 1 
+        int numToAdd = 1 <<(n-1);
+        for(int i = res.size()-1; i>=0; i--){
+            res.add(numToAdd+res.get(i));
+        }
+        return res;
+    }
+
+90. Subsets II backtracking, taken or not, equal or not
+taken means whether current number will be added into list(taken).
+if it is taken(true), we need to add it into list. 
+If not taken, we need to decide whether current number is equal to the previous number. we add it into list if not equal.
+* Time complexity: O(2^n)
+* Space complexity:O(n)
+public List<List<Integer>> subsetsWithDup(int[] nums) {
+        List<List<Integer>> res = new ArrayList<>();
+        if(nums == null || nums.length == 0) return res;
+        Arrays.sort(nums);
+        helper(nums,0,true, res, new ArrayList<>());
+        return res;
+    }
+    private void helper(int[]nums, int currIndex, boolean taken, List<List<Integer>>res, List<Integer> list){
+        if(currIndex == nums.length) res.add(new ArrayList<>(list));
+        else{
+            helper(nums, currIndex+1, false, res, list);
+            if(taken||nums[currIndex-1]!=nums[currIndex]){
+                list.add(nums[currIndex]);
+                helper(nums, currIndex+1, true, res, list);
+                list.remove(list.size()-1);
+            }
+        }
+    }
