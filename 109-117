@@ -1,0 +1,257 @@
+109. Convert Sorted List To Binary Search Tree
+* Time complexity: O(nlogn)
+* Space complexity: O(n);
+public TreeNode sortedListToBST(ListNode head) {
+        return helper(head, null);
+    }
+    private TreeNode helper(ListNode start, ListNode end){
+        if(start == end) return null;
+        else{
+            ListNode mid = start;
+            ListNode fast = start;
+            while(fast!=end && fast.next!=end){//binary
+                mid = mid.next;
+                fast = fast.next.next;
+            }
+            TreeNode root = new TreeNode(mid.val);
+            root.left = helper(start,mid);
+            root.right = helper(mid.next, end);
+            return root;
+        }
+    }
+
+110. Balanced Binary Tree
+recursively get the height of each subtree of each node, compare their difference, if greater than 1, then return false
+although this is working, but it's not efficient, since it repeatedly computes the heights of each node every time
+* Time complexity:O(n^2)
+* Space complexity: O(n)
+public boolean isBalanced(TreeNode root) {
+        if(root == null) return true;
+        if(Math.abs(getH(root.left)-getH(root.right)) > 1) return false;
+        else return isBalanced(root.left)&& isBalanced(root.right);
+    }
+    private int getH(TreeNode root){
+        if(root == null) return 0;
+        int leftH = getH(root.left);
+        int rightH = getH(root.right);
+        return Math.max(leftH, rightH)+1;
+    }
+
+111. Minimum Depth of Binary Tree
+edge case: root == null
+(1) BFS, iteration
+Use queue
+* Time complexity: O(n)
+* Space complexity:O(n)
+public int minDepth(TreeNode root) {
+        if(root == null) return 0;
+        Queue<TreeNode> q = new LinkedList();
+        q.offer(root);
+        int level = 0;
+        while(!q.isEmpty()){
+            level++;
+            int size = q.size();
+            for(int i = 0; i<size; i++){
+                TreeNode curr = q.poll();
+                if(curr.left!=null) q.offer(curr.left);
+                if(curr.right!=null) q.offer(curr.right);
+                if(curr.left == null && curr.right == null) return level;
+            }
+        }
+        return level;
+    }
+
+(2) DFS, recursion
+* Time complexity: O(n)
+* Space complexity:O(n)
+public int minDepth(TreeNode root) {
+        if(root == null) return 0;
+        int left = minDepth(root.left);
+        int right = minDepth(root.right);
+        if(left == 0) return right+1;// these two are for edge case like [1,2], it’s left tree is 0, but it’s actual depth is it’s right children’s height(1) plus 1
+        if(right == 0) return left+1;
+        return Math.min(left, right)+1;
+    }
+
+112. Path Sum
+requirement: root-to-leaf path such that adding up all the values along the path equals the given sum.
+(1) recursion 
+* Time complexity: O(n)
+* Space complexity:O(n)
+public boolean hasPathSum(TreeNode root, int sum) {
+        if(root == null) return false;
+        if(root.val == sum && root.left == null && root.right == null) return true;
+        return hasPathSum(root.left, sum-root.val) || hasPathSum(root.right, sum-root.val);
+    }
+(2) iteration dfs
+Use stack
+* Time complexity: O(n)
+* Space complexity:O(n)
+public boolean hasPathSum(TreeNode root, int sum) {
+        if(root == null) return false;
+        Stack<TreeNode> stack = new Stack<>();
+        stack.push(root);
+        while(!stack.isEmpty()){
+            TreeNode curr = stack.pop();
+            if(curr.left==null && curr.right==null){//till the end
+                if(curr.val == sum) return true;
+            }
+            if(curr.right!=null){
+                stack.push(curr.right);
+                curr.right.val += curr.val;
+            }
+            if(curr.left!=null){
+                stack.push(curr.left);
+                curr.left.val += curr.val;
+            }
+        }
+        return false;
+    }
+
+113. Path Sum II dfs, backtracking
+* Time complexity: O(n)
+* Space complexity: O(n)
+public List<List<Integer>> pathSum(TreeNode root, int sum) {
+        List<List<Integer>> res = new ArrayList();
+        if(root == null) return res;
+        dfs(root, new ArrayList(), res, sum);
+        return res;
+    }
+    private void dfs(TreeNode root, List<Integer> list, List<List<Integer>> res, int sum){
+        list.add(root.val);
+        if(root.left == null && root.right == null){
+            if(sum == root.val) res.add(new ArrayList(list));
+        }
+        if(root.left!=null) dfs(root.left, list, res, sum-root.val);
+        if(root.right!=null) dfs(root.right, list, res, sum-root.val);
+        list.remove(list.size()-1);
+    }
+114. Flatten Binary Tree To Linked List
+//postorder traversal
+(1) recursion
+* Time complexity: O(n)
+* Space complexity: O(n)
+ TreeNode prev = null;//从底到顶的遍历
+    public void flatten(TreeNode root) {
+        if(root == null) return;
+        flatten(root.right);
+        flatten(root.left);
+        root.right = prev;
+        root.left = null;
+        prev = root;
+    }
+(2) iteration
+
+* Time complexity: O(n)
+* Space complexity: O(n)
+public void flatten(TreeNode root) {
+        while(root!=null){
+            if(root.left!=null){
+                TreeNode prev = root.left;
+                while(prev.right!=null) prev = prev.right;
+                prev.right = root.right;
+                root.right = root.left;
+                root.left = null;
+            }
+            root = root.right;
+        }
+    }
+
+115. Distinct subsequences 2d dynamic programming
+
+* Time complexity: O(m*n)
+* Space complexity:O(m*n)
+可以用滚动数组把space降为O(n)
+public int numDistinct(String s, String t) {
+        if(s == null || s.length() == 0) return 0;
+        int[][] dp = new int[s.length()+1][t.length()+1];
+        for(int i = 0; i<=s.length(); i++){
+            dp[i][0] = 1;
+        }
+        for(int i = 1; i<=s.length(); i++){
+            for(int j = 1; j<=t.length(); j++){
+                if(s.charAt(i-1) == t.charAt(j-1))
+                    dp[i][j] = dp[i-1][j]+dp[i-1][j-1];
+                else
+                    dp[i][j] = dp[i-1][j];
+            }
+        }
+        return dp[s.length()][t.length()];
+    }
+
+116. Populating Next Right Pointers in Each Node（perfect binary search tree）
+
+(1) recursion
+* Time complexity: O(n)
+* Space complexity: O(n)
+public Node connect(Node root) {
+        if(root == null) return null;
+        if(root.left!=null && root.right!=null) root.left.next = root.right; //pointer between one root’s children
+        if(root.next!=null && root.right!=null) root.right.next = root.next.left;// pointer between different roots’ children
+        connect(root.left);
+        connect(root.right);
+        return root;
+    }
+(2) iteration
+start node is to iterate in depth, start = start.left
+curr node is to iterate in current breadth, curr = curr.next;
+* Time complexity: O(n)
+* Space complexity: O(n)
+public Node connect(Node root) {
+        if(root == null) return null;
+        Node start = root;
+        while(start!=null){
+            Node curr = start;
+            while(curr!=null){
+                if(curr.left!=null && curr.right!=null) curr.left.next = curr.right;
+                if(curr.next!=null && curr.right!=null) curr.right.next = curr.next.left;
+                curr = curr.next;
+            }
+            start = start.left;
+        }
+        return root;
+    }
+
+117. Populating Next Right Pointers in Each Node II
+(1) recursion
+* Time complexity: O(n)
+* Space complexity: O(1)
+public Node connect(Node root) {
+        if(root == null||(root.left == null && root.right == null)) return root;
+        if(root.left!=null && root.right!=null) root.left.next = root.right;
+        Node pLeft = root.right!=null?root.right:root.left;
+        for(Node pNext = root.next; pNext!=null && pLeft.next == null;pNext = pNext.next){
+            if(pNext.left!=null) pLeft.next = pNext.left;
+            else if(pNext.right!=null) pLeft.next = pNext.right;
+        }
+        
+        connect(root.right);//right first!!!
+        connect(root.left);
+        return root;
+    }
+(2) iteration
+use dummy node to keep record of the next level's root to refer, prev travel current level by referring to root in the level above
+* Time complexity: O(n)
+* Space complexity: O(1)
+public Node connect(Node root) {
+        Node dummy = new Node(0);
+        Node prev = dummy;
+        Node saveRoot = root;
+        while(saveRoot!=null){
+            if(saveRoot.left!=null){
+                prev.next = saveRoot.left;
+                prev = prev.next;
+            }
+            if(saveRoot.right!=null){
+                prev.next = saveRoot.right;
+                prev = prev.next;
+            }
+            saveRoot = saveRoot.next;
+            if(saveRoot == null){
+                prev = dummy;
+                saveRoot = dummy.next;
+                dummy.next = null;
+            }
+        }
+        return root;
+    }
