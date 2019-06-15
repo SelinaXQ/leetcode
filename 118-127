@@ -1,0 +1,394 @@
+118. Pascal's Triangle
+for every new row to form, get the previous row and do the computation
+* Time complexity: O(n*n)
+* Space complexity: O(n)
+public List<List<Integer>> generate(int numRows) {
+        List<List<Integer>> res = new ArrayList();
+        int len = 1;
+        for(int i = 0; i<numRows; i++){
+            List<Integer> row = new ArrayList(len);
+            row.add(1);
+            if(i>0){
+                List<Integer> preRow = res.get(i-1);
+                for(int j = 1; j<len; j++){
+                    if(j<preRow.size()){
+                        row.add(preRow.get(j-1)+preRow.get(j));
+                    }
+                }
+                row.add(1);
+            }
+            len++;
+            res.add(row);
+        }
+        return res;
+    }
+
+119. Pascal's Triangle II
+both version are 86.86%, thought one of them use list of list like 118
+* Time complexity: O(n*n)
+* Space complexity: O(n)
+(1) version1
+public List<Integer> getRow(int rowIndex) {
+        List<Integer> res = new ArrayList();
+        if(rowIndex<0) return res;
+        for(int i = 0; i<=rowIndex; i++){
+            res.add(0,1);
+            for(int j = 1; j<res.size()-1; j++){
+                res.set(j, res.get(j)+res.get(j+1));
+            }
+        }
+        return res;
+    }
+(2) version 2
+public List<Integer> getRow(int rowIndex) {
+        List<List<Integer>> triangle = new ArrayList();
+        //List<Integer> res = new ArrayList();
+        int len = 1;
+        for(int i = 0; i<rowIndex+1; i++){
+            List<Integer> row = new ArrayList();
+            row.add(1);
+            if(i>0){
+                List<Integer> prevRow = triangle.get(i-1);
+                for(int j = 1; j<len; j++){
+                    if(j<prevRow.size()){
+                        row.add(prevRow.get(j-1) + prevRow.get(j));
+                    }
+                    
+                }
+                row.add(1);
+            }
+            len++;
+            triangle.add(row);
+        }
+        return triangle.get(rowIndex);
+    }
+
+120. Triangle dynamic programming
+* Time complexity: O(n^2)
+* Space complexity: O(n)
+public int minimumTotal(List<List<Integer>> triangle) {
+        //from bottom up
+        if(triangle == null || triangle.size() == 0) return 0;
+        if (triangle.size() == 1) return triangle.get(0).get(0);
+        int n = triangle.size();
+        List<Integer> cache = triangle.get(n-1);
+        for(int layer = n-2; layer>=0; layer--){
+            //for each layer
+            for(int i = 0; i<=layer; i++){
+                int value = Math.min(cache.get(i), cache.get(i+1))+triangle.get(layer).get(i);
+                cache.set(i, value);
+            }
+        }
+        return cache.get(0);
+    }
+
+121. Best Time to Buy and Sell Stock(only one transaction)
+Find the min price and compare the price[i] - minprice
+
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int maxProfit(int[] prices) {
+        int minPrice = Integer.MAX_VALUE;
+        int maxProfit = 0;
+        for(int i = 0; i<prices.length; i++){
+            if(prices[i]<minPrice) minPrice = prices[i];
+            else if(prices[i] - minPrice > maxProfit) maxProfit = prices[i] - minPrice;
+        }
+        return maxProfit;
+    }
+
+122. Best Time to Buy and Sell Stock II (any amount of transactions)
+compare every two prices, if i+1 > i, compute the difference and add it to the profit.
+
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int maxProfit(int[] prices) {
+        int profit = 0;
+        for(int i = 0; i<prices.length; i++){
+            if(prices[i+1]>prices[i]){
+                profit+=prices[i+1]-prices[i];
+            }
+        }
+        return profit;
+    }
+
+123. Best Time to Buy and Sell Stock III (at most two transactions)
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int maxProfit(int[] prices) {
+        if(prices == null || prices.length == 0) return 0;
+        int buy1 = Integer.MAX_VALUE;
+        int buy2 = Integer.MAX_VALUE;
+        int sell1 = 0;
+        int sell2 = 0;
+        for(int i = 0; i<prices.length; i++){
+            int p = prices[i];
+            buy1 = Math.min(buy1, p);//buy1, sell1, like problem 120
+            sell1 = Math.max(sell1, p-buy1);
+            buy2 = Math.min(buy2, p-sell1);//减去第一次的收益所需要花的钱
+            sell2 = Math.max(sell2, p-buy2);
+        }
+        return sell2;
+    }
+
+124. Binary Tree Maximum Path Sum dfs
+* Time complexity: O(n)
+* Space complexity: O(1)
+
+int max = Integer.MIN_VALUE;
+    public int maxPathSum(TreeNode root) {
+        dfs(root);
+        return max;
+    }
+    private int dfs(TreeNode root){
+        if(root == null) return 0;
+        int left = Math.max(dfs(root.left),0);// if the children’s value is larger than 0, we want it.
+        int right = Math.max(dfs(root.right),0);
+        max = Math.max(max, root.val+left+right);
+        return root.val+Math.max(left, right);// this is for recursion return compared with 0, from bottom up only choose one branch
+    }
+
+125. Valid Palindrome alphanumeric characters: Character.isLetterOrDigit()
+edge case: upper case and lower case
+start from two side and compare
+* Time complexity: O(n)
+* Space complexity: O(1)
+public boolean isPalindrome(String s) {
+        if(s.length() == 0 || s == null) return true;
+        int i = 0;
+        int j = s.length()-1;
+        char[] chars = s.toCharArray();
+        while(i<j){
+            while(i<j && !Character.isLetterOrDigit(chars[i])) i++;
+            while(i<j && !Character.isLetterOrDigit(chars[j])) j--;
+            if(Character.toLowerCase(chars[i])!=Character.toLowerCase(chars[j])) return false;
+            i++;
+            j--;
+        }
+        return true;
+    }
+
+126. Word Ladder II bfs, dfs
+* Time complexity: O(n)
+* Space complexity: O(n)
+最长的题 哭了
+https://www.youtube.com/watch?v=lmypbtgdpuQ
+class Solution {
+    HashMap<String, List<String>> map = new HashMap<String, List<String>>();//map contains every word and the list is words have only one different char from it in wordset.
+    HashSet<String> doneSet = new HashSet<>();
+    HashMap<String, Integer> deepsMap = new HashMap<>();
+    public List<List<String>> findLadders(String beginWord, String endWord, List<String> wordList) {
+        buildMap(wordList, beginWord);
+        int minLength = bfs(beginWord, endWord, wordList);
+        doneSet.clear();
+        LinkedList<String> currList = new LinkedList<String>();
+        List<List<String>> results = new LinkedList<List<String>>();
+        currList.add(endWord);
+        doneSet.add(endWord);
+        dfs(currList, results, beginWord, minLength,1);
+        return results;
+    }
+    private void buildMap(List<String> wordList, String beginWord){
+        HashSet<String> wordSet = new HashSet<String>();
+        for(String str: wordList){
+            wordSet.add(str);
+        }
+        wordSet.add(beginWord);
+        for(String str: wordSet){
+            map.put(str, new LinkedList<String>());
+            diff(str, wordSet);
+        }
+    }
+    private void diff(String s, HashSet<String> wordSet){ O(n)
+        for(int i = 0; i<s.length(); i++){
+            StringBuilder sb = new StringBuilder(s);
+            char curr = sb.charAt(i);
+            for(char c = 'a'; c<='z'; c++){
+                if(curr!=c){
+                    sb.setCharAt(i,c);
+                    if(wordSet.contains(sb.toString()))
+                        map.get(s).add(sb.toString());
+                }
+            }
+        }
+    }
+    public int bfs(String beginWord, String endWord, List<String> wordList){
+        if(beginWord.equals(endWord)) return 0;
+        Queue<String> queue = new LinkedList<String>();
+        queue.offer(beginWord);
+        doneSet.add(beginWord);
+        deepsMap.put(beginWord,0);
+        int steps = 1;
+        while(queue.size()!=0){
+            int size = queue.size();
+            for(int i = 0; i<size; i++){
+                String curr = queue.poll();
+                if(curr.equals(endWord)) return steps;
+                if(map.containsKey(curr)){
+                    List<String> nxtStrList = map.get(curr);
+                    for(String nxtStr:nxtStrList){
+                        if(!deepsMap.containsKey(nxtStr)){
+                            queue.offer(nxtStr);
+                            deepsMap.put(nxtStr, steps);
+                        }
+                    }
+                }
+            }
+            steps++;
+        }
+        return 0;
+    }
+    public void dfs(LinkedList<String> currList, List<List<String>> res, String target, int minLength, int currDeep){
+        String currString = currList.get(0);
+        if(currList.size()>minLength) return;
+        else if(currList.size() ==  minLength){
+            if(currString.equals(target))
+                res.add(new LinkedList<String>(currList));
+        }else{
+            for(String str:map.get(currString)){
+                if(!doneSet.contains(str) && deepsMap.containsKey(str) && deepsMap.get(str) + currDeep<minLength){
+                    currList.addFirst(str);
+                    doneSet.add(str);
+                    dfs(currList, res, target, minLength, currDeep+1);
+                    doneSet.remove(str);
+                    currList.removeFirst();
+                }
+            }
+        }
+    }
+}
+
+127. Word Ladder bfs 最短路径
+(1) version1
+https://www.youtube.com/watch?v=mgICIVXu2sQ
+class Solution {
+    HashMap<String, List<String>> map = new HashMap<String, List<String>>();
+    public void buildMap(List<String> wordList, String beginWord){
+        for(String str: wordList){
+            List<String> nlist = new LinkedList<String>();
+            map.put(str, nlist);
+            for(String nxt:wordList){
+                if(diff(str,nxt) == 1){//只放入只有一个不相同字符的string
+                    map.get(str).add(nxt);
+                }
+            }
+        }
+        
+        if(!map.containsKey(beginWord)){
+            List<String> nlist = new LinkedList<String>();
+            map.put(beginWord, nlist);
+            for(String nxt: wordList){
+                if(diff(beginWord, nxt) == 1){
+                    map.get(beginWord).add(nxt);
+                }
+            }
+        }
+        
+    }
+    public int diff(String s, String t){//判断不相同字符的个数
+        int count = 0;
+        for(int i = 0; i<s.length(); i++){
+            if(s.charAt(i)!=t.charAt(i)) count++;
+        }
+        return count;
+    }
+    public int ladderLength(String beginWord, String endWord, List<String> wordList) {
+        if(beginWord.equals(endWord)) return 0;
+        buildMap(wordList, beginWord);
+        HashSet<String> doneSet = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+        
+        queue.offer(beginWord);
+        doneSet.add(beginWord);
+        int steps = 1;
+        while(queue.size()!=0){
+            int size = queue.size();
+            for(int i = 0; i<size; i++){
+                String curr = queue.poll();//当前处理的string
+                if(curr.equals(endWord)) return steps;
+                List<String> nxtStrList = map.get(curr);
+                for(String nxtStr : nxtStrList){
+                    if(!doneSet.contains(nxtStr)){
+                        queue.offer(nxtStr);
+                        doneSet.add(nxtStr);
+                    }
+                }
+            }
+            steps++;
+        }
+        return 0;
+    }
+}
+(2) version2 from xb
+public int ladderLength1(String beginWord, String endWord, List<String> wordList) {
+        Set<String> set = new HashSet<>(wordList);
+        if (set.contains(beginWord)) {
+            set.remove(beginWord);
+        }
+        Queue<String> queue = new LinkedList<>(); // like level traversal, queue stores the words for each level
+        int level = 1; // length of transformation sequence
+        int curNum = 1;  // #words in cur level
+        int nextNum = 0;  // #words in next level
+        queue.offer(beginWord);
+        while (!queue.isEmpty()) {
+            String word = queue.poll();
+            curNum--;
+            for (int i = 0; i < word.length(); i++) {
+                char[] wordUnit = word.toCharArray();
+                // try to change every character in word from 'a' to 'z'
+                for (char j = 'a'; j <= 'z'; j++) {
+                    wordUnit[i] = j;
+                    String temp = new String(wordUnit);
+                    // check whether this word is in wordlist
+                    if (set.contains(temp)) {
+                        // if the word equals endword, return level
+                        if (temp.equals(endWord)) {
+                            return level + 1;
+                        }
+                        // update nextNum, queue, and set
+                        nextNum++;
+                        queue.offer(temp);
+                        set.remove(temp);
+                    }
+                }
+            }
+            // all words in current level is consumed, set it with nextNum
+            if (curNum == 0) {
+                curNum = nextNum;
+                nextNum = 0;
+                level++;
+            }
+        }
+        return 0;
+    }
+ (3) version3 from xb
+ public int ladderLength2(String beginWord, String endWord, List<String> wordList) {
+        Set<String> set = new HashSet<>(wordList);
+        if (set.contains(beginWord)) {
+            set.remove(beginWord);
+        }
+        Queue<String> queue = new LinkedList<>();
+        Map<String, Integer> map = new HashMap<>();
+        map.put(beginWord, 1);
+        queue.offer(beginWord);
+        while (!queue.isEmpty()) {
+            String word = queue.poll();
+            int curLevel = map.get(word);
+            for (int i = 0; i < word.length(); i++) {
+                char[] wordUnit = word.toCharArray();
+                for (char j = 'a'; j <= 'z'; j++) {
+                    wordUnit[i] = j;
+                    String temp = new String(wordUnit);
+                    if (set.contains(temp)) {
+                        if (temp.equals(endWord)) {
+                            return curLevel + 1;
+                        }
+                        map.put(temp, curLevel + 1);
+                        queue.offer(temp);
+                        set.remove(temp);
+                    }
+                }
+            }
+        }
+        return 0;
+    }
