@@ -1,0 +1,249 @@
+133. Clone Graph connected undirected graph
+use map to store the original node and it’s value is the copy.
+(1) dfs
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    Map<Node, Node> map = new HashMap<>();
+    public Node cloneGraph(Node node) {
+        if(node == null) return null;
+        if(map.containsKey(node)) return map.get(node);
+        Node temp = new Node(node.val, new ArrayList<Node>());//temp is the copy
+        map.put(node, temp);//map contains node and it's copy
+        for(Node neighbor: node.neighbors){
+            temp.neighbors.add(cloneGraph(neighbor));
+        }
+        return map.get(node);
+    }
+}
+(2) bfs
+public Node cloneGraph(Node node) {
+        if(node == null) return null;
+        Map<Node, Node> map = new HashMap<>();
+        Queue<Node> q = new LinkedList();
+        map.put(node, new Node(node.val, new ArrayList<Node>()));
+        q.add(node);
+        while(!q.isEmpty()){
+            Node top = q.poll();
+            for(Node neighbor: top.neighbors){
+                if(!map.containsKey(neighbor)){
+                    map.put(neighbor, new Node(neighbor.val, new ArrayList<Node>()));
+                    q.add(neighbor);
+                }
+                map.get(top).neighbors.add(map.get(neighbor));
+            }
+        }
+        return map.get(node);
+    }
+
+134. Gas Station trick thought
+Use two pointers start at the end, end at start. if sum>=0 move end, if sum<0 move start
+* Time complexity:O(n)
+* Space complexity: O(1)
+public int canCompleteCircuit(int[] gas, int[] cost) {
+        int start = gas.length-1;
+        int end = 0;
+        int sum = gas[start] - cost[start];
+        while(start>end){
+            if(sum>=0){
+                sum += gas[end] - cost[end];
+                end++;
+            }else{
+                start--;
+                sum += gas[start] - cost[start];
+            }
+        }
+        return sum>=0 ? start:-1;
+    }
+
+135. Candy
+Two round left to right and right to left.
+Note right to left, we need to compare it’s neighbor+1 and itself. If itself is larger we don’t need to change it.
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int candy(int[] ratings) {
+        if(ratings.length == 0) return 0;
+        if(ratings.length == 1) return 1;
+        int n = ratings.length;
+        int[] candies = new int[n];
+        Arrays.fill(candies,1);
+        int sum = 0;
+        //from left to right
+        for(int i = 0; i<n-1; i++){
+            if(ratings[i]<ratings[i+1]) candies[i+1] = candies[i]+1;
+        }
+        //from right to left
+        for(int i = n-1; i>0; i--){
+            if(ratings[i]<ratings[i-1]) candies[i-1] = Math.max(candies[i-1], candies[i]+1);
+        }
+        for(int i = 0; i<candies.length; i++){
+            sum += candies[i];
+        }
+        return sum;
+    }
+136. Single Number(appear twice) (implement it without using extra memory?)
+(1) set
+* Time complexity:O(n)
+* Space complexity:O(n)
+public int singleNumber(int[] nums) {
+        Set<Integer> set = new HashSet();
+        for(int i: nums){
+            if(!set.add(i)) set.remove(i);
+        }
+        Iterator<Integer> it = set.iterator();
+        return it.next();
+    }
+(2) sort
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+public int singleNumber(int[] nums) {
+        if(nums == null || nums.length == 0) return 0;
+        if(nums.length == 1) return nums[0];
+        Arrays.sort(nums);
+        for(int i = 0; i<nums.length-1;){
+            if(nums[i] == nums[i+1]) i += 2;
+            else return nums[i];
+        }
+        return nums[nums.length-1];
+    }
+(3) bit manipulation brilliant!!! exclusive operation
+* Time complexity: O(n)
+* Space complexity: O(1)
+
+public int singleNumber(int[] nums) {
+        if(nums == null || nums.length == 0) return 0;
+        if(nums.length == 1) return nums[0];
+        int res = 0;
+        for(int num : nums) res ^= num;
+        return res;
+    }
+137. Single Number II (three times)
+(1) sort
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+public int singleNumber(int[] nums) {
+        if(nums == null || nums.length == 0) return 0;
+        if(nums.length == 1) return nums[0];
+        Arrays.sort(nums);
+        int i = 0;
+        while(i<nums.length - 2){
+            if(nums[i] == nums[i+1] && nums[i+1] == nums[i+2]){
+                i = i+3;
+            }else{
+                return nums[i];
+            }
+            
+        }
+        return nums[nums.length-1];
+    }
+(2) Bit manipulation 
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int singleNumber(int[] nums) {
+        int once = 0;//appear first time
+        int twice = 0;//appear second time
+        for(int num : nums){
+            once = (once^num) & ~twice;
+            twice = (twice^num) & ~once;
+        }
+        return once;
+    }
+(2) bit
+
+public int singleNumber(int[] nums) {
+        if(nums.length == 1) return nums[0];
+        int res = 0, mask=1;
+        for(int i = 0; i<32; i++){
+            int sum = 0;
+            for(int num : nums){
+                sum+=(num>>i) & 1;
+                sum %= 3;
+            }
+            res = res | (sum<<i);
+        }
+        return res;
+    }
+(3) hashmap
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int singleNumber(int[] nums) {
+        if(nums.length == 1) return nums[0];
+        Map<Integer, Integer> map = new HashMap<>();
+        for(int num : nums){
+            map.put(num, map.getOrDefault(num, 0) + 1);
+        }
+        for(int key : map.keySet()){
+            if(map.get(key) == 1) return key;
+        }
+        return -1;
+    }
+
+138. Copy List With Random Pointer similar to 133
+(1)map
+* Time complexity: O(n)
+* Space complexity: O(n)
+public Node copyRandomList(Node head) {
+        if(head == null) return null;
+        Map<Node, Node> map = new HashMap();
+        Node node = head;
+        while(node!=null){
+            map.put(node, new Node(node.val, null, null));
+            node = node.next;
+        }
+        node = head;
+        while(node!=null){
+            map.get(node).next = map.get(node.next);
+            map.get(node).random = map.get(node.random);
+            node = node.next;
+        }
+        return map.get(head);
+    }
+(2) iteration
+* Time complexity: O(n)
+* Space complexity: O(1)
+Algorithm
+1. Traverse the original list and clone the nodes as you go and place the cloned copy next to its original node. This new linked list is essentially a interweaving of original and cloned nodes.
+
+
+As you can see we just use the value of original node to create the cloned copy. The next pointer is used to create the weaving. Note that this operation ends up modifying the original linked list.
+ cloned_node.next = original_node.next
+ original_node.next = cloned_node
+2. Iterate the list having both the new and old nodes intertwined with each other and use the original nodes' random pointers to assign references to random pointers for cloned nodes. For eg. If B has a random pointer to A, this means B' has a random pointer to A'.
+
+3. Now that the random pointers are assigned to the correct node, the nextpointers need to be correctly assigned to unweave the current linked list and get back the original list and the cloned list.
+
+public Node copyRandomList(Node head) {
+        if(head == null) return null;
+// Creating a new weaved list of original and copied nodes.
+        Node ptr = head;
+        while(ptr!=null){
+// Cloned node
+            Node newNode = new Node(ptr.val);
+// Inserting the cloned node just next to the original node.
+      // If A->B->C is the original linked list,
+      // Linked list after weaving cloned nodes would be A->A'->B->B'->C->C'
+            newNode.next = ptr.next;
+            ptr.next = newNode;
+            ptr = newNode.next;
+        }
+        ptr = head;
+// Now link the random pointers of the new nodes created.
+    // Iterate the newly created list and use the original nodes' random pointers,
+    // to assign references to random pointers for cloned nodes.
+        while(ptr!=null){
+            ptr.next.random = (ptr.random!=null)? ptr.random.next:null;
+            ptr = ptr.next.next;
+        }
+// Unweave the linked list to get back the original linked list and the cloned list.
+    // i.e. A->A'->B->B'->C->C' would be broken to A->B->C and A'->B'->C'
+        Node ptrOldList = head;// A->B->C
+        Node ptrNewList = head.next;// A'->B'->C'
+        Node headOld = head.next;
+        while(ptrOldList!=null){
+            ptrOldList.next = ptrOldList.next.next;
+            ptrNewList.next = (ptrNewList.next!=null)?ptrNewList.next.next:null;
+            ptrOldList = ptrOldList.next;
+            ptrNewList = ptrNewList.next;
+        }
+        return headOld;
+    }
