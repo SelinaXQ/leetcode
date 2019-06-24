@@ -1,0 +1,247 @@
+159. Longest Substring with At Most Two Distinct Characters sliding window
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int lengthOfLongestSubstringTwoDistinct(String s) {
+        int n = s.length();
+        if(n<3) return n;
+        
+        int left = 0;
+        int right = 0;
+        //hashmap character -> its rightmost position
+        //in the sliding window
+        HashMap<Character, Integer> hashmap = new HashMap<Character, Integer>();
+        int maxLen = 2;
+        while(right<n){
+            //sliding window contains less than 3 characters
+            if(hashmap.size()<3) {
+                hashmap.put(s.charAt(right), right);
+                right++;
+            }
+            if(hashmap.size() == 3) {
+                //delete the leftmost character
+                int deleteIndex = Collections.min(hashmap.values());
+                hashmap.remove(s.charAt(deleteIndex));
+                //move left pointers of the slidewindow;
+                left = deleteIndex+1;
+            }
+            maxLen = Math.max(maxLen, right-left);
+        }
+        return maxLen;
+    }
+}
+
+160. Intersection of two linked list
+(1) hashmap
+* Time complexity: O(n)
+* Space complexity: O(n)
+public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        HashMap<ListNode, Integer> map = new HashMap<>();
+        if(headA == null || headB == null) return null;
+        
+        ListNode m = headA;
+        ListNode n = headB;
+        while(m!=null){
+            map.put(m,1);
+            m = m.next;
+        }
+        while(n!=null){
+            if(map.containsKey(n)) return n;
+            n = n.next;
+        }
+        return null;
+    }
+(2) compute length
+* Time complexity: O(n)
+* Space complexity: O(1)
+public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        ListNode dummyA = headA;
+        ListNode dummyB = headB;
+        int lenA = 0;
+        int lenB = 0;
+
+        while (dummyA != null) {
+            dummyA = dummyA.next;
+            lenA++;
+        }
+
+        while (dummyB != null) {
+            dummyB = dummyB.next;
+            lenB++;
+        }
+
+        int diff = Math.abs(lenA - lenB);
+
+        if (lenA > lenB) {
+            while (diff-- > 0)
+                headA = headA.next;
+        } else {
+            while (diff-- > 0) {
+                headB = headB.next;
+            }
+        }
+
+        while (headA != headB) {
+            headA = headA.next;
+            headB = headB.next;
+        }
+
+        return headA;
+    }
+161. One Edit Distance
+* Time complexity: O(n)
+* Space complexity: O(1)
+public boolean isOneEditDistance(String s, String t) {
+        int slen = s.length();
+        int tlen = t.length();
+        
+        if(Math.abs(slen-tlen) > 1) return false;
+        if(slen>tlen) return isOneEditDistance(t,s);
+        
+        for(int i = 0; i<slen; i++){ //use shorter one's length
+            if(s.charAt(i)!=t.charAt(i)){
+                if(slen == tlen) return s.substring(i+1).equals(t.substring(i+1));
+                else return s.substring(i).equals(t.substring(i+1));
+            }
+        }
+        return slen+1 == tlen;
+    }
+
+162. Find Peak Element
+[1] return 0
+[1,2] return 1
+[2,1] return 0
+[1,2,1] return 1
+[1,2,3] return 0
+Start from 1, if index is equal to length-1, just compare i and i-1
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int findPeakElement(int[] nums) {
+        if(nums.length == 1) return 0;
+        for(int i = 1; i<nums.length; i++){
+            if(i == nums.length-1){
+                if(nums[i]>nums[i-1]) return i;
+            }else{
+                if(nums[i]>nums[i-1] && nums[i]>nums[i+1]) return i;
+            }
+            
+        }
+        return 0;
+    }
+
+163. Missing Ranges
+Consider two boundaries, one is nums[0] and lower, one is nums[nums.length-1] and upper.
+and for numbers between lower and upper, we need to consider duplicates and adjacent numbers.
+we jump over these numbers.
+* Time complexity: O(n)
+* Space complexity: O(1)
+
+public List<String> findMissingRanges(int[] nums, int lower, int upper) {
+        List<String> res = new ArrayList<String>();
+        if(nums.length == 0){
+            res.add(range(lower, upper));
+            return res;
+        }
+        if(nums[0]!=lower) res.add(range(lower,nums[0]-1));
+        for(int i = 1; i<nums.length; i++){
+            if(nums[i] == nums[i-1] || nums[i] == nums[i-1]+1) continue;
+            res.add(range(nums[i-1]+1, nums[i]-1));
+        }
+        if(nums[nums.length-1]!=upper){
+            res.add(range(nums[nums.length-1]+1, upper));
+        }
+        return res;
+    }
+    private String range(int low, int high){
+        return low == high? low + "" : low + "->"+high;
+    }
+164. Maximum Gap
+(1)
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+public int maximumGap(int[] nums) {
+        if(nums.length<2) return 0;
+        if(nums == null) return 0;
+        Arrays.sort(nums);
+        int max = 0;
+        for(int i = 1; i<nums.length; i++){
+            int diff = nums[i] - nums[i-1];
+            if(diff>max) max = diff;
+        }
+        return max;
+    }
+(2) bucket  sort
+class Solution {
+    public int maximumGap(int[] nums) {
+        if (nums == null || nums.length <= 1)
+            return 0;
+
+        int min = nums[0];
+        int max = nums[0];
+        for (int i = 1; i < nums.length; i++) {
+            min = Math.min(min, nums[i]);
+            max = Math.max(max, nums[i]);
+        }
+        // calculate the average gap
+        int gap = (int)Math.ceil((double)(max - min) / (nums.length - 1));
+        if (gap == 0)  // all the numbers are same
+            return 0;
+        // calculate the size of bucket
+        int size = (int)((max - min) / gap) + 1;
+        int[] bucketMin = new int[nums.length - 1];
+        int[] bucketMax = new int[nums.length - 1];
+        Arrays.fill(bucketMax, Integer.MIN_VALUE);
+        Arrays.fill(bucketMin, Integer.MAX_VALUE);
+        // store the min and max for each bucket
+        for (int num : nums) {
+            if (num == min || num == max)
+                continue;
+            int bucket = (num - min) / gap;
+            bucketMin[bucket] = Math.min(num, bucketMin[bucket]);
+            bucketMax[bucket] = Math.max(num, bucketMax[bucket]);
+        }
+        // result should be the min in current bucket - max in previous bucket
+        int res = 0;
+        int prev = min;
+        for (int i = 0; i < nums.length - 1; i++) {
+            if (bucketMin[i] == Integer.MAX_VALUE || bucketMax[i] == Integer.MIN_VALUE)
+                continue;
+            res = Math.max(res, bucketMin[i] - prev);
+            prev = bucketMax[i];
+        }
+        res = Math.max(res, max - prev);
+        return res;
+    }
+}
+
+100%
+public int maximumGap(int[] nums) {
+    int n = nums.length;
+    if(n < 2) return 0;
+    int min = nums[0];
+    int max = nums[0];
+    for(int i = 1;i < n;i++){
+        if(min > nums[i]) min = nums[i];
+        if(max < nums[i]) max = nums[i];
+    }
+    
+    int gap = (max-min)/(n-1);
+    if(gap == 0) gap++;
+    int len = (max-min)/gap+1;
+    int [] tmax = new int [len];
+    int [] tmin = new int [len];
+    
+    for(int i = 0;i < n;i++){
+        int index = (nums[i]-min)/gap;
+        if(nums[i] > tmax[index]) tmax[index] = nums[i];
+        if(tmin[index] == 0 || nums[i] < tmin[index]) tmin[index] = nums[i];
+    }
+    int myMax = 0;
+    for(int i = 0;i < len;i++){
+        if(myMax < tmin[i]-min) myMax = tmin[i]-min;
+        if(tmax[i] != 0) min = tmax[i];
+    }
+    return myMax;
+}
+
+
