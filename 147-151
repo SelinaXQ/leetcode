@@ -1,0 +1,187 @@
+147. Insertion Sorted List linked list
+
+* Time complexity: O(n^2)
+* Space complexity: O(1)
+//      head 
+//dummy prev curr
+//temp  test     next
+//
+//      temp test
+class Solution {
+    public ListNode insertionSortList(ListNode head) {
+        if(head == null || head.next == null) return head;
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        
+        ListNode prev = head;
+        ListNode curr = prev.next;
+        
+        while(curr!=null){
+            ListNode temp = dummy;
+            ListNode test = dummy.next;
+            ListNode next = curr.next;
+            while(curr.val>test.val){
+                temp = test;
+                test = test.next;
+            }
+            //curr node will be inserted between temp and test
+            //prev node will then point to next node
+            if(test!=curr){
+                temp.next = curr;
+                curr.next = test;
+                prev.next = next;
+            }else prev = curr;//It's already in sorted order so just move the prev to curr
+            curr = next;//now insert the node in the correct location
+        }
+        return dummy.next;
+    }
+}
+
+148. Sort List linked list
+Sort a linked list in O(n log n) time using constant space complexity.
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+sort first, then merge
+
+class Solution {
+    public ListNode sortList(ListNode head) {
+        if(head == null || head.next == null) return head;
+        ListNode prev = null;
+        ListNode slow = head;
+        ListNode fast = head;
+        while(fast!=null && fast.next!=null){
+            prev = slow;
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        prev.next = null;
+        
+        ListNode l1 = sortList(head);
+        ListNode l2 = sortList(slow);
+        
+        return merge(l1, l2);
+    }
+    private ListNode merge(ListNode l1, ListNode l2){
+        //corner cases
+        if(l1 == null) return l2;
+        if(l2 == null) return l1;
+        if(l1.val<l2.val){
+            l1.next = merge(l1.next, l2);
+            return l1;
+        }else{
+            l2.next = merge(l1, l2.next);
+            return l2;
+        }
+    }
+}
+
+149. Max points on a line
+Given n points on a 2D plane, find the maximum number of points that lie on the same straight line.
+* Time complexity: O(n^2)
+* Space complexity: O(n)
+https://leetcode.com/problems/max-points-on-a-line/solution/
+enumeration to get best solution
+class Solution {
+    public int maxPoints(int[][] points) {
+        if(points == null || points.length == 0) return 0;
+        if(points.length <= 2) return points.length;
+        
+        int res = 0;
+        for(int i = 0; i<points.length; i++){
+            Map<String, Integer> map = new HashMap<>();
+            int samePoint = 0;
+            int lineMax = 0;
+            for(int j = i+1; j<points.length; j++){
+                int x = points[i][0] - points[j][0];
+                int y = points[i][1] - points[j][1];
+                if(x == 0 && y == 0) {
+                    samePoint++;
+                    continue;
+                }
+                int gcd = gcd(x,y);
+                x /= gcd;
+                y /= gcd;
+                //x/y string format to keep slope
+                String slope = String.valueOf(x) + "/" + String.valueOf(y);
+                map.put(slope, map.getOrDefault(slope,0) + 1);
+                lineMax = Math.max(lineMax, map.get(slope));
+            }
+            res = Math.max(res, lineMax+samePoint+1);
+        }
+        return res;
+    }
+    private int gcd(int a, int b){
+        if(a == 0) return b;
+        return gcd(b%a, a);
+    }
+}
+
+150. Evaluate Reverse Polish Notation
+* Time complexity:O(n)
+* Space complexity: O(n)
+Stack is to store numbers, every time pop out two numbers when meet operators, operand2 first pop out
+Set is used cause easy to refer.
+
+public int evalRPN(String[] tokens) {
+        Stack<String> stack = new Stack<>(); //only store numbers
+        Set<String> op = new HashSet();
+        op.add("+");
+        op.add("-");
+        op.add("*");
+        op.add("/");
+        
+        int exp = 0;
+        String operand1 = "";
+        String operand2 = "";
+        for(int i = 0; i< tokens.length;){
+            while(i<tokens.length && !op.contains(tokens[i])){
+                stack.push(tokens[i]);
+                i++;
+            }
+            if(i == tokens.length){
+                if(!stack.isEmpty()) return Integer.parseInt(stack.pop());
+            }else if(op.contains(tokens[i])){
+                if(!stack.isEmpty()){ // operand2 first
+                    operand2 = stack.pop();
+                }
+                if(!stack.isEmpty()){
+                    operand1 = stack.pop();
+                }
+                if(tokens[i].equals("+")){
+                    exp = Integer.parseInt(operand1) + Integer.parseInt(operand2);
+                }else if(tokens[i].equals("-")){
+                    exp = Integer.parseInt(operand1) - Integer.parseInt(operand2);
+                }else if(tokens[i].equals("*")){
+                    exp = Integer.parseInt(operand1) * Integer.parseInt(operand2);
+                }else if(tokens[i].equals("/")){
+                    exp = Integer.parseInt(operand1) / Integer.parseInt(operand2);
+                }else{
+                    exp = Integer.parseInt(operand2);
+                }
+                stack.push(String.valueOf(exp));
+                i++;
+            }
+        }
+        return Integer.parseInt(stack.pop());
+    }
+
+151. Reverse words in a string
+Note: 
+* A word is defined as a sequence of non-space characters.
+* Input string may contain leading or trailing spaces. However, your reversed string should not contain leading or trailing spaces.
+* You need to reduce multiple spaces between two words to a single space in the reversed string.
+
+split(“ “) first, then use stringbuilder to build string
+* Time complexity: O(n)
+* Space complexity: O(n)
+public String reverseWords(String s) {
+        if(s == null || s.length() == 0) return "";
+        String[] words = s.split(" ");
+        if(words == null || words.length == 0) return "";
+        StringBuilder sb = new StringBuilder();
+        for(int i = words.length-1; i>=0; i--){
+            if(words[i].equals("")) continue;
+            else sb.append(words[i]).append(" ");
+        }
+        return sb.substring(0, sb.length()-1).toString();
+    }
