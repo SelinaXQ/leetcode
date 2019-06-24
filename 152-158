@@ -1,0 +1,218 @@
+152. Maximum Product Subarray dynamic programming
+have two parameter, one store max value and one store minimum value, since two negative value may larger.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int maxProduct(int[] nums) {
+        if(nums == null || nums.length == 0) return 0;
+        int max = nums[0];
+        int min = nums[0];
+        
+        int res = nums[0];
+        
+        for(int i = 1; i<nums.length; i++){
+            int a = max*nums[i]; 
+            int b = min*nums[i]; //负数乘负数可能会大
+            max = Math.max(Math.max(a,b), nums[i]);
+            min = Math.min(Math.min(a,b), nums[i]);
+            
+            res = Math.max(res, max);
+        }
+        return res;
+    }
+
+153. Find minimum in rotated sorted array (NO DUPLICATE)
+no duplicate
+(i.e.,  [0,1,2,4,5,6,7] might become  [4,5,6,7,0,1,2]).
+(1) general way
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int findMin(int[] nums) {
+        if(nums.length == 1) return nums[0];
+        for(int i = 1; i<nums.length; i++){
+            if(nums[i]<nums[i-1]) return nums[i];
+        }
+        return nums[0];
+    }
+(2) binary search 
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public int findMin(int[] nums) {
+        if(nums.length == 1) return nums[0];
+        int start = 0;
+        int end = nums.length-1;
+        if(nums[end]>nums[0]) return nums[0];
+        while(end >= start){
+            int mid = start + (end-start)/2;
+            if(nums[mid]>nums[mid+1]) return nums[mid+1];
+            if(nums[mid-1]>nums[mid]) return nums[mid];
+            
+            if(nums[mid]>nums[0]) start = mid+1;
+            else end = mid-1;
+        }
+        return -1;
+    }
+
+154. Find Minimum in Rotated Sorted Array II (CONTAIN DUPLICATE)
+(1) general way
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int findMin(int[] nums) {
+        if(nums.length == 1) return nums[0];
+        for(int i = 1; i<nums.length; i++){
+            if(nums[i]<nums[i-1]) return nums[i];
+        }
+        return nums[0];
+    }
+(2) binary search
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public int findMin(int[] nums) {
+        if(nums.length == 1) return nums[0];
+        int low = 0;
+        int high = nums.length-1;
+        
+        while(low<high){
+            while(low<high && nums[low] == nums[low+1]) low++;
+            int mid = low+(high-low)/2;
+            if(nums[mid]>=nums[low] && nums[mid] > nums[high]) low = mid+1;
+            else high = mid;
+        }
+        return nums[low];
+    }
+
+155. Min Stack oo design
+class MinStack {
+
+    private int min;
+    private Stack<Integer> stack;
+    
+    /** initialize your data structure here. */
+    public MinStack() {
+        this.stack = new Stack<>();
+        this.min = Integer.MAX_VALUE;
+    }
+    //only push the old minimum value when the current minimum value changes after 
+    //pushing the new value x
+    
+    public void push(int x) {
+        if(x<=min) {
+            stack.push(min);//keep the previous min
+            min = x;
+        }
+        stack.push(x);
+    }
+    
+    public void pop() {
+        //if pop operation could result in the changing of the current minimum value
+        //pop twice and change the current minimum value to the last minimum value, cause in the push we push twice 
+        if(stack.pop() == min) min = stack.pop();
+        if(stack.isEmpty()) min = Integer.MAX_VALUE;
+    }
+    
+    public int top() {
+        return stack.peek();
+    }
+    
+    public int getMin() {
+        return min;
+    }
+}
+
+/**
+ * Your MinStack object will be instantiated and called as such:
+ * MinStack obj = new MinStack();
+ * obj.push(x);
+ * obj.pop();
+ * int param_3 = obj.top();
+ * int param_4 = obj.getMin();
+ */
+
+156. Binary Tree Upside Down recursion
+题意是说每个结点的右子树要么为空, 要么一定有一个左子树孩子和一个右子树孩子, 因此树的形状是左偏的. 所以我们要将最左边的子树作为最终的新根结点, 然后递归的将其父结点作为其右孩子,并且父结点的右孩子作为其左孩子. 一个非常重要的地方是每次一定要将父结点的左右孩子都置为空, 因为父结点设置成其左孩子的右孩子之后成了叶子结点, 需要将其指针断掉.
+(1) recursion
+* Time complexity: O(n)
+* Space complexity: O(n)
+public TreeNode upsideDownBinaryTree(TreeNode root) {
+        if(root == null || root.left == null && root.right == null) return root;
+        TreeNode newRoot = upsideDownBinaryTree(root.left);
+        root.left.left = root.right;
+        root.left.right = root;
+        root.left = null;
+        root.right = null;
+        return newRoot;
+    }
+(2) iteration
+* Time complexity:O(n)
+* Space complexity: O(1)
+public TreeNode upsideDownBinaryTree(TreeNode root) {
+        TreeNode curr = root;
+        TreeNode prev = null;
+        TreeNode temp = null;
+        TreeNode next = null;
+        while(curr!=null){
+            next = curr.left;
+            curr.left = temp;
+            temp = curr.right;//temp to keep the previous right child
+            
+            curr.right = prev;
+            prev = curr;
+            curr = next;
+        }
+        return prev;
+    }
+
+157. Read N Characters Given Read4 API
+* Time complexity: O(n)
+* Space complexity: O(n)
+/**
+ * The read4 API is defined in the parent class Reader4.
+ *     int read4(char[] buf);
+ */
+public class Solution extends Reader4 {
+    /**
+     * @param buf Destination buffer
+     * @param n   Number of characters to read
+     * @return    The number of actual characters read
+     */
+    public int read(char[] buf, int n) {
+        int index = 0;
+        int next = 0;
+        char[] buffer = new char[4];
+        while(index<n && (next = read4(buffer))!=0){
+            for(int i = 0; i<next && index<n; index++, i++){
+                buf[index] = buffer[i];
+            }
+        }
+        return index;
+    }
+}
+
+158. Read N Characters Given Read4 II - Call multiple times
+* Time complexity: O(n)
+* Space complexity: O(n)
+/**
+ * The read4 API is defined in the parent class Reader4.
+ *     int read4(char[] buf); 
+ */
+public class Solution extends Reader4 {
+    /**
+     * @param buf Destination buffer
+     * @param n   Number of characters to read
+     * @return    The number of actual characters read
+     */
+    private int buffPtr = 0;
+    private int buffCnt = 0;
+    private char[] buff = new char[4];
+    public int read(char[] buf, int n) {
+        int ptr = 0;
+        while(ptr<n){
+            if(buffPtr == 0) buffCnt = read4(buff);
+            if(buffCnt == 0) break;
+            while(ptr<n && buffPtr<buffCnt){
+                buf[ptr++] = buff[buffPtr++];
+            }
+            if(buffPtr>=buffCnt) buffPtr = 0;
+        }
+        return ptr;
+    }
+}
