@@ -1,0 +1,390 @@
+171. Excel Sheet Column Number
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int titleToNumber(String s) {
+        int res = 0;
+        for(char c: s.toCharArray()){
+            res = res*26 + c-'A'+1;
+        }
+        return res;
+    }
+
+172. Factorial Trailing Zeros math
+public int trailingZeroes(int n) {
+        int result = 0;
+        while(n>4){
+            n = n/5;
+            result += n;
+        }
+        return result;
+    }
+
+173. Binary Search Tree Iterator design
+
+(1) recursion with queue
+inorder traversal with queue, store all the value in the queue first
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class BSTIterator {
+    private Queue<Integer> queue;
+    public BSTIterator(TreeNode root) {
+        queue = new LinkedList();
+        if(root!=null){
+            dfs(root, queue);
+        }
+    }
+    
+    /** @return the next smallest number */
+    public int next() {
+        return queue.poll();
+    }
+    
+    /** @return whether we have a next smallest number */
+    public boolean hasNext() {
+        return !queue.isEmpty();
+    }
+    
+    private void dfs(TreeNode root, Queue<Integer> q){
+        if(root.left!=null) dfs(root.left,q);
+        q.offer(root.val);
+        if(root.right!=null) dfs(root.right, q);
+    }
+}
+
+/**
+ * Your BSTIterator object will be instantiated and called as such:
+ * BSTIterator obj = new BSTIterator(root);
+ * int param_1 = obj.next();
+ * boolean param_2 = obj.hasNext();
+ */
+(2) iteration with stack
+
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class BSTIterator {
+
+    private TreeNode curr;
+    private Stack<TreeNode> stack;
+    public BSTIterator(TreeNode root) {
+        curr = root;
+        stack = new Stack<>();
+    }
+    
+    /** @return the next smallest number */
+    public int next() {
+        while(curr!=null){
+            stack.push(curr);
+            curr = curr.left;
+        }
+        curr = stack.pop();
+        int res = curr.val;
+        curr = curr.right;
+        return res;
+    }
+    
+    /** @return whether we have a next smallest number */
+    public boolean hasNext() {
+        if(!stack.isEmpty() || curr!=null) return true;
+        else return false;
+    }
+}
+
+/**
+ * Your BSTIterator object will be instantiated and called as such:
+ * BSTIterator obj = new BSTIterator(root);
+ * int param_1 = obj.next();
+ * boolean param_2 = obj.hasNext();
+ */
+
+174. Dungeon Game dynamic programming
+dp[i][j] represents the minimum health points needed at position (i,j)
+* Time complexity: O(n*m)
+* Space complexity: O(n*m)
+class Solution {
+    public int calculateMinimumHP(int[][] dungeon) {
+        int m = dungeon.length;
+        int n = dungeon[0].length;
+        //dp[i][j] represents the minimum health points needed at position (i,j) and
+        //the last row or column is just dummy (outside of the range).
+        int[][] dp = new int[m+1][n+1];
+        
+        for(int i = 0; i<=m; i++){
+            Arrays.fill(dp[i], Integer.MAX_VALUE);
+        }
+        //initializing boundary
+        //set it to one since 1 is the minimum HP
+        dp[m-1][n] = 1;
+        dp[m][n-1] = 1;
+        //if is smaller than 0, it means dungeon[i][j] is a lucky spot or it can be afford to reach here, so set it to 1
+        for(int i = m-1; i>=0; i--){
+            for(int j = n-1; j>=0; j--){
+                int minHP = Math.min(dp[i+1][j], dp[i][j+1]) - dungeon[i][j];
+                dp[i][j] = (minHP<=0)?1:minHP;
+                
+            }
+        }
+        return dp[0][0];
+    }
+}
+
+175. Combine Two Tables sql
+select FirstName, LastName, City, State
+from Person left join Address
+on Person.PersonId = Address.PersonId;
+
+176. Second Highest Salary
+select max(Salary) as SecondHighestSalary
+from Employee
+where Salary not in (
+    select max(Salary) from Employee
+)
+
+177. Nth Highest Salary
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+set N = N - 1;
+  RETURN (
+      # Write your MySQL query statement below.
+      select DISTINCT Salary 
+      from Employee
+      order by Salary desc
+      Limit 1
+      Offset N
+  );
+END
+179. Largest Number sort
+edge case: leading zeros
+Algorithm
+First, we convert each integer to a string. Then, we sort the array of strings.
+While it might be tempting to simply sort the numbers in descending order, this causes problems for sets of numbers with the same leading digit. For example, sorting the problem example in descending order would produce the number 95343039534303, while the correct answer can be achieved by transposing the 33 and the 3030. Therefore, for each pairwise comparison during the sort, we compare the numbers achieved by concatenating the pair in both orders
+
+public String largestNumber(int[] nums) {
+        if(nums == null || nums.length == 0) return "";
+        
+        String[] res = new String[nums.length];
+        for(int i = 0; i<nums.length; i++){
+            res[i] = String.valueOf(nums[i]);
+        }
+        
+        Arrays.sort(res, new Comparator<String>(){
+           public int compare(String str1, String str2){
+               String s1 = str1+str2;
+               String s2 = str2+str1;
+               return s2.compareTo(s1);
+           } 
+        });
+        if(res[0].charAt(0) == '0') return "0";
+        StringBuilder sb = new StringBuilder();
+        for(String s:res){
+            sb.append(s);
+        }
+        return sb.toString();
+    }
+186. Reverse Words in a String II
+Three steps to reverse:
+1. reverse the whole sentence
+2. reverse each word
+3. reverse the last word, if there is only one word, this will solve the corner case(no white space)
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public void reverseWords(char[] s) {
+        //step 1
+        reverse(s, 0, s.length-1);
+        //step 2
+        int start = 0;
+        for(int i = 0; i<s.length; i++){
+            if(s[i] == ' '){
+                reverse(s,start, i-1);
+                start = i+1;
+            }
+        }
+        //step 3
+        reverse(s, start, s.length-1);
+    }
+    
+    private void reverse(char[] s, int start, int end){
+        while(start<end){
+            char temp = s[start];
+            s[start] = s[end];
+            s[end] = temp;
+            start++;
+            end--;
+        }
+    }
+}
+
+187. Repeated DNA Sequence
+Get 10 char string one by one. Use map or set to count the number
+(1)HashSet
+* Time complexity: O(n)
+* Space complexity: O(n)
+public List<String> findRepeatedDnaSequences(String s) {
+        if(s == null || s.length()<=10) return new ArrayList<>();
+        
+        Set<String> seen = new HashSet<>();
+        Set<String> res = new HashSet<>();
+        for(int i = 0; i<s.length()-9; i++){
+            String temp = s.substring(i, i+10);
+            if(!seen.add(temp)){
+                res.add(temp);
+            }
+        }
+        return new ArrayList<>(res);
+    }
+(2) HashMap
+* Time complexity: O(n)
+* Space complexity: O(n)
+public List<String> findRepeatedDnaSequences(String s) {
+        if(s == null || s.length()<=10) return new ArrayList<>();
+        Map<String, Integer> map = new HashMap();
+        for(int i = 0; i<s.length()-9; i++){
+            String temp = s.substring(i, i+10);
+            map.put(temp, map.getOrDefault(temp, 0)+1);
+        }
+        List<String> res = new ArrayList();
+        for(String key: map.keySet()){
+            if(map.get(key)>1){
+                res.add(key);
+            }
+        }
+        return res;
+    }
+
+188. Best Time to Buy and Sell Stock IV dynamic programming
+https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/discuss/54117/Clean-Java-DP-solution-with-comment
+dp[k, i] represents the max profit up until prices[i] using at most k transactions.
+localMax store the max amount of money after buy prices[j-1]
+For example, if j == 8, then amongst all jj == 1,2,...,7
+The max profit could be one of the following:
+dp[i-1][0] + prices[8] - prices[0]
+dp[i-1][1] + prices[8] - prices[1]
+dp[i-1][2] + prices[8] - prices[2]
+...
+dp[i-1][6] + prices[8] - prices[6]
+dp[i-1][7] + prices[8] - prices[7]
+localMax is the max value amongst all:
+dp[i-1][0] - prices[0]
+dp[i-1][1] - prices[1]
+dp[i-1][2] - prices[2]
+...
+dp[i-1][6] - prices[6]
+dp[i-1][7] - prices[7]
+Then localMax + prices[8] is the max profit if we sell the stock at day 8. Then we compare this result with the max profit of not selling the stock at day 8, take the max of the two.
+* Time complexity: O(k*n)
+* Space complexity: O(k*n)
+
+public int maxProfit(int k, int[] prices) {
+        int n = prices.length;
+        if(n<=1) return 0;//if length less than 1, not buy in and sell process
+        if(k>=n/2){
+            int maxProfit = 0;
+            for(int i = 1; i<n; i++){
+                if(prices[i]>prices[i-1]) maxProfit += prices[i]-prices[i-1];
+            }
+            return maxProfit;
+        }
+        
+        //dp[i][j] means the max profit of at most i transaction until day j
+        int[][] dp = new int[k+1][n];
+        int localMax = Integer.MIN_VALUE;
+        for(int i = 1; i<=k; i++){
+            for(int j = 1; j<n; j++){
+                localMax = Math.max(localMax, dp[i-1][j-1] - prices[j-1]);//buy stock at j-1 
+                dp[i][j] = Math.max(dp[i][j-1], localMax+prices[j]);//sell stock at j
+            }
+            localMax = Integer.MIN_VALUE;
+        }
+        return dp[k][n-1];
+    }
+
+189. Rotate Array
+(1)Three steps:
+1. reverse whole array
+2. reverse 0-(k-1) (index)
+3. reverse k(index) to array.length-1
+Example:
+Original List                   : 1 2 3 4 5 6 7
+After reversing all numbers     : 7 6 5 4 3 2 1
+After reversing first k numbers : 5 6 7 4 3 2 1
+After revering last n-k numbers : 5 6 7 1 2 3 4 --> Result
+* Time complexity: O(n)
+* Space complexity: O(1)
+
+public void rotate(int[] nums, int k) {
+        k = k%nums.length;
+        reverse(nums, 0, nums.length-1);
+        reverse(nums, 0, k-1);
+        reverse(nums, k, nums.length-1);
+    }
+    private void reverse(int[] nums, int start, int end){
+        while(start<end){
+            int temp = nums[start];
+            nums[start] = nums[end];
+            nums[end] = temp;
+            start++;
+            end--;
+        }
+    }
+
+190. Reverse Bits bit manipulation
+Follow up:
+If this function is called many times, how would you optimize it? https://leetcode.com/problems/reverse-bits/discuss/54868/Java-follow-up-caching-reversed-bytes not understand
+* Time complexity: O(n)
+* Space complexity: O(1)
+public class Solution {
+    // you need treat n as an unsigned value
+    public int reverseBits(int n) {
+        if(n == 0) return 0;
+        int res = 0;
+        for(int i = 0 ; i<32; i++){
+            //add the bit from left to right;
+            res<<=1;
+            // if last bit of n is 1, add 1 to the last bit of res;
+            if((n&1) == 1) res++;
+            //move from n's right to left;
+            n>>=1;
+        }
+        return res;
+    }
+}
+191. Number of 1 Bits bit manipulation
+(Hamming weights)
+* Time complexity: O(1), The run time depends on the number of bits in nn. Because nn in this piece of code is a 32-bit integer, the time complexity is O(1).
+* Space complexity: O(1)
+(1) check every bit
+public int hammingWeight(int n) {
+        int res = 0;
+        for(int i = 0; i<32; i++){
+            if((n&1) == 1) res++;
+            n>>=1;
+        }
+        return res;
+    }
+(2) n&(n-1) trick
+
+
+In the binary representation, the least significant 1-bit in n always corresponds to a 0-bit in n−1. Therefore, anding the two numbers n and n−1 always flips the least significant 11-bit in n to 0, and keeps all other bits the same.
+
+public int hammingWeight(int n) {
+        int res = 0;
+        while(n!=0){
+            res++;
+            n &= (n-1);
+        }
+        return res;
+    }
