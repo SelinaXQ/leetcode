@@ -1,0 +1,367 @@
+206. Reverse Linked List
+         1->   2->3->4->5->null
+prev  curr  next
+* Time complexity: O(n)
+* Space complexity:O(1)
+
+public ListNode reverseList(ListNode head) {
+        if(head == null|| head.next == null) return head;
+        
+        ListNode prev = null;
+        ListNode curr = head;
+        while(curr!=null){
+            ListNode next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        return prev;
+    }
+（2）recursion
+The recursive version is slightly trickier and the key is to work backwards. Assume that the rest of the list had already been reversed, now how do I reverse the front part? Let's assume the list is: n1 → … → nk-1 → nk → nk+1 → … → nm → Ø
+Assume from node nk+1 to nm had been reversed and you are at node nk.
+n1 → … → nk-1 → nk → nk+1 ← … ← nm
+We want nk+1’s next node to point to nk.
+So,
+nk.next.next = nk;
+Be very careful that n1's next must point to Ø. If you forget about this, your linked list has a cycle in it. This bug could be caught if you test your code with a linked list of size 2.
+public ListNode reverseList(ListNode head) {
+        if(head == null|| head.next == null) return head;
+        
+        ListNode newHead = reverseList(head.next);
+        head.next.next = head;
+        head.next = null;
+        return newHead;
+    }
+207. Course Schedule Topological Sort
+https://www.cnblogs.com/grandyang/p/4484571.html
+
+
+Hints:
+1. This problem is equivalent to finding if a cycle exists in a directed graph. If a cycle exists, no topological ordering exists and therefore it will be impossible to take all courses.
+2. There are several ways to represent a graph. For example, the input prerequisites is a graph represented by a list of edges. Is this graph representation appropriate?
+3. Topological Sort via DFS - A great video tutorial (21 minutes) on Coursera explaining the basic concepts of Topological Sort.
+4. Topological sort could also be done via BFS.
+这道课程清单的问题对于我们学生来说应该不陌生，因为我们在选课的时候经常会遇到想选某一门课程，发现选它之前必须先上了哪些课程，这道题给了很多提示，第一条就告诉我们了这道题的本质就是在有向图中检测环。 LeetCode 中关于图的题很少，有向图的仅此一道，还有一道关于无向图的题是 Clone Graph。个人认为图这种数据结构相比于树啊，链表啊什么的要更为复杂一些，尤其是有向图，很麻烦。第二条提示是在讲如何来表示一个有向图，可以用边来表示，边是由两个端点组成的，用两个点来表示边。第三第四条提示揭示了此题有两种解法，DFS 和 BFS 都可以解此题。
+(1) bfs+Topological Sort
+我们先来看 BFS 的解法，我们定义二维数组 graph 来表示这个有向图，一维数组 in 来表示每个顶点的入度。我们开始先根据输入来建立这个有向图，并将入度数组也初始化好。然后我们定义一个 queue 变量，将所有入度为0的点放入队列中，然后开始遍历队列，从 graph 里遍历其连接的点，每到达一个新节点，将其入度减一，如果此时该点入度为0，则放入队列末尾。直到遍历完队列中所有的值，若此时还有节点的入度不为0，则说明环存在，返回 false，反之则返回 true。
+* Time complexity: O(V+E)
+* Space complexity: O(n)
+public boolean canFinish(int numCourses, int[][] prerequisites) {
+        int res = numCourses;
+        //in keep courses that need pre
+        int[] in = new int[numCourses];
+        for(int[] need: prerequisites){
+            in[need[0]]++;
+        }
+        // queue store courses don't need pre(it's other courses' pre course)
+        Queue<Integer> queue = new LinkedList();
+        for(int i = 0; i<numCourses; i++){
+            if(in[i] == 0) queue.offer(i);
+        }
+        
+        //empty queue to see if courses in in[] can be finished, if in == 0, add it to queue means this course has been done.
+        while(!queue.isEmpty()){
+            int curr = queue.poll();
+            res--;
+            for(int[] pre: prerequisites){
+                if(pre[1] == curr){
+                    in[pre[0]]--;
+                    if(in[pre[0]] == 0){
+                        queue.offer(pre[0]);
+                    }
+                }
+            }
+        }
+        return res == 0;
+    }
+
+(2)dfs
+DFS 的解法，也需要建立有向图，还是用二维数组来建立，和 BFS 不同的是，我们像现在需要一个一维数组 visit 来记录访问状态，这里有两种状态，0表示还未访问过，1表示已经访问了。大体思路是，先建立好有向图，然后从第一个门课开始，找其可构成哪门课，暂时将当前课程标记为已访问，然后对新得到的课程调用 DFS 递归，直到出现新的课程已经访问过了，则返回 false，没有冲突的话返回 true，然后把标记为已访问的课程改为未访问。
+* Time complexity: O(V+E)
+* Space complexity: O(n)
+class Solution {
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        List<List<Integer>> graph = new ArrayList();
+        for(int i = 0; i<numCourses; i++){
+            graph.add(new ArrayList());
+        }
+        for(int[] pre : prerequisites){
+            graph.get(pre[1]).add(pre[0]);
+        }
+        int[] visited = new int[numCourses];
+        for(int i = 0; i<numCourses; i++){
+            if(!dfs(i, graph, visited)) return false;
+        }
+        return true;
+    }
+    private boolean dfs(int course, List<List<Integer>> graph, int[] visited){
+        visited[course] = 1;
+        List<Integer> nextCourses = graph.get(course);
+        for(int i = 0; i<nextCourses.size(); i++){
+            int nextCourse = nextCourses.get(i);
+            if(visited[nextCourse] == 1) return false; // cycle
+            if(visited[nextCourse] == 0){
+                if(!dfs(nextCourse, graph, visited)) return false;
+            }
+        }
+        
+        visited[course] = 2;// done visiting
+        return true;
+    }
+}
+
+208. Implement Trie (Prefix Tree)
+Build a new class TrieNode with val, isWord and children, 
+class TrieNode{
+    char val;
+    boolean isWord = false;
+    TrieNode[] children = new TrieNode[26];
+    public TrieNode(){
+    }
+    public TrieNode(char c){
+        this.val = c;
+    }
+}
+class Trie {
+
+    private TrieNode root;
+    /** Initialize your data structure here. */
+    public Trie() {
+        root = new TrieNode();
+        root.val = ' ';
+        //initialize root to be an empty char, this is a common practice as how Wiki defines Trie data structure as well
+    }
+    
+    /** Inserts a word into the trie. */
+    public void insert(String word) {
+        TrieNode node = root;
+        for(int i = 0; i<word.length(); i++){
+            if(node.children[word.charAt(i) - 'a'] == null){
+                node.children[word.charAt(i) - 'a'] = new TrieNode(word.charAt(i));
+            }
+            node = node.children[word.charAt(i)-'a'];
+        }
+        node.isWord = true;
+    }
+    
+    /** Returns if the word is in the trie. */
+    public boolean search(String word) {
+        TrieNode node = root;
+        for(int i = 0; i<word.length(); i++){
+            if(node.children[word.charAt(i)-'a'] == null) return false;
+            node = node.children[word.charAt(i) - 'a'];
+        }
+        return node.isWord;
+    }
+    
+    /** Returns if there is any word in the trie that starts with the given prefix. */
+    public boolean startsWith(String prefix) {
+        TrieNode node = root;
+        for(int i = 0; i<prefix.length(); i++){
+            if(node.children[prefix.charAt(i)-'a'] == null) return false;
+            node = node.children[prefix.charAt(i) - 'a'];
+        }
+        return true;
+    }
+}
+
+/**
+ * Your Trie object will be instantiated and called as such:
+ * Trie obj = new Trie();
+ * obj.insert(word);
+ * boolean param_2 = obj.search(word);
+ * boolean param_3 = obj.startsWith(prefix);
+ */
+
+209. Minimum Size Subarray Sum
+find the minimal length of a contiguous subarray of which the sum ≥ s. If there isn't one, return 0 instead.
+(1) bruto force
+* Time complexity: O(n^2)
+* Space complexity: O(1)
+public int minSubArrayLen(int s, int[] nums) {
+        if(nums == null||nums.length == 0) return 0;
+        int minLen = Integer.MAX_VALUE;
+        for(int i = 0; i<nums.length; i++){
+            int sum = 0;
+            for(int j = i; j<nums.length; j++){
+                sum += nums[j];
+                if(sum >= s){
+                    minLen = Math.min(minLen, j-i+1);
+                    break;
+                }
+            }
+        }
+        return minLen == Integer.MAX_VALUE?0:minLen;
+    }
+(2) sliding window
+Use a left pointer to record the left index, every time sum larger than s, we minus nums[left], and move left++.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int minSubArrayLen(int s, int[] nums) {
+        if(nums == null||nums.length == 0) return 0;
+        int minLen = Integer.MAX_VALUE;
+        int sum = 0;
+        int left = 0;
+        for(int i = 0; i<nums.length; i++){
+            sum += nums[i];
+            while(sum >= s){
+                minLen = Math.min(minLen, i-left+1);
+                sum -= nums[left];
+                left++;
+            }
+        }
+        return minLen == Integer.MAX_VALUE?0:minLen;
+    }
+
+210. Course Schedule II
+(1) Topological sort + bfs
+* Time complexity: O(V+E)
+* Space complexity: O(n)
+
+public int[] findOrder(int numCourses, int[][] prerequisites) {
+        int[] res =  new int[numCourses];
+        int[] in = new int[numCourses];
+        //courses need pre
+        for(int[] pair : prerequisites){
+            in[pair[0]]++;
+        }
+        //courses don't need pre
+        Queue<Integer> queue = new LinkedList();
+        for(int i = 0; i<numCourses; i++){
+            if(in[i] == 0) queue.offer(i);
+        }
+        //take course
+        int idx = 0;
+        while(!queue.isEmpty()){
+            int pre = queue.poll();
+            res[idx++] = pre;
+            //take courses according to the pre
+            for(int[] pair: prerequisites){
+                if(pair[1] == pre){
+                    in[pair[0]] -- ;
+                    if(in[pair[0]] == 0) queue.offer(pair[0]);
+                }
+            }
+        }
+        return idx == numCourses? res : new int[0];
+    }
+(2) DFS?
+211. Add and Search Word - Data structure design
+recursion while searching
+class TrieNode{
+    char val;
+    boolean isWord = false;
+    TrieNode[] children = new TrieNode[26];
+    public TrieNode(){
+        
+    }
+    public TrieNode(char c){
+        this.val = c;
+    }
+}
+class WordDictionary {
+
+    private TrieNode root;
+    /** Initialize your data structure here. */
+    public WordDictionary() {
+        root = new TrieNode();
+        root.val = ' ';
+    }
+    
+    /** Adds a word into the data structure. */
+    public void addWord(String word) {
+        TrieNode node = root;
+        for(int i = 0; i< word.length(); i++){
+            if(node.children[word.charAt(i) - 'a'] == null){
+                node.children[word.charAt(i) - 'a'] = new TrieNode(word.charAt(i));
+            }
+            node = node.children[word.charAt(i) - 'a'];
+        }
+        node.isWord = true;
+    }
+    
+    /** Returns if the word is in the data structure. A word could contain the dot character '.' to represent any one letter. */
+    public boolean search(String word) {
+        return search(word, 0, root);
+    }
+    
+    private boolean search(String word, int i, TrieNode node){
+        if(node == null) return false;
+        if(i == word.length()) return node.isWord;
+        
+        char c = word.charAt(i);
+        if(c == '.'){
+            for(TrieNode child: node.children){
+                if(search(word, i+1, child)) return true;
+            }
+        }else{
+            if(search(word, i+1, node.children[c-'a'])) return true;
+        }
+        
+        return false;
+    }
+}
+
+/**
+ * Your WordDictionary object will be instantiated and called as such:
+ * WordDictionary obj = new WordDictionary();
+ * obj.addWord(word);
+ * boolean param_2 = obj.search(word);
+ */
+
+212. Word Search II backtracking+Trie
+https://leetcode.com/problems/word-search-ii/discuss/59780/Java-15ms-Easiest-Solution-(100.00)
+* Time complexity: O(m*n*Trienode)
+* Space complexity: O(TrieNode)
+The same letter cell may not be used more than once in a word.
+class TrieNode{
+    public TrieNode[] children;
+    public String word;
+    public TrieNode(){
+        children = new TrieNode[26];
+        word = null;
+    }
+}
+class Solution {
+    public List<String> findWords(char[][] board, String[] words) {
+        List<String> res = new ArrayList<>();
+        TrieNode root = buildTrie(words);
+        for(int i = 0; i<board.length; i++){
+            for(int j = 0; j<board[0].length; j++){
+                dfs(board, i, j, root, res);
+            }
+        }
+        return res;
+    }
+    private TrieNode buildTrie(String[] words){
+        TrieNode root = new TrieNode();
+        for(String w: words){
+            TrieNode node = root;
+            for(char c: w.toCharArray()){
+                int i = c - 'a';
+                if(node.children[i] == null){
+                    node.children[i] = new TrieNode();
+                }
+                node = node.children[i];
+            }
+            node.word = w;
+        }
+        return root;
+    }
+    private void dfs(char[][] board, int i, int j, TrieNode node, List<String> res){
+        char c = board[i][j];
+        if(c == '#' || node.children[c-'a'] == null) return;
+        node = node.children[c-'a'];
+        if(node.word!=null){ //found one
+            res.add(node.word);
+            node.word = null; // de-duplicate
+        }
+        board[i][j] = '#';
+        if(i>0) dfs(board, i-1, j, node, res);
+        if(j>0) dfs(board, i, j-1, node, res);
+        if(i<board.length-1) dfs(board, i+1, j, node, res);
+        if(j<board[0].length-1) dfs(board, i, j+1, node, res);
+        board[i][j] = c;
+    }
+}
