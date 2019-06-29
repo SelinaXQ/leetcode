@@ -1,0 +1,814 @@
+220. Contain Duplicate III
+(1) bruto force
+* Time complexity: O(n*k)
+* Space complexity: O(1)\'
+public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if(nums.length == 0 || nums == null) return false;
+        for(int i = 0; i<nums.length; i++){
+            long target = (long) nums[i]; //overflow
+            for(int j = i+1; j<=i+k && j<nums.length; j++){
+                if(Math.abs(nums[j] - target) <= (long) t) return true;
+            }
+        }
+        return false;
+    }
+(2) binary search tree TreeSet
+Algorithm
+The real bottleneck of Approach #1 is due to all elements in the sliding window are being scanned to check if Condition 2 is satisfied. Could we do better?
+If elements in the window are in sorted order, we can apply Binary Search twice to search for the two boundaries x+tx+t and x-tx−t for each element xx.
+Unfortunately, the window is unsorted. A common mistake here is attempting to maintain a sorted array. Although searching in a sorted array costs only logarithmic time, keeping the order of the elements after insert and deleteoperation is not as efficient. Imagine you have a sorted array with kk elements and you are adding a new item xx. Even if you can find the correct position in O(logk) time, you still need O(k) time to insert xx into the sorted array. The reason is that you need to shift all elements after the insert position one step backward. The same reasoning applies to removal as well. After removing an item from position ii, you need to shift all elements after ii one step forward. Thus, we gain nothing in speed compared to the naive linear search approachabove.
+To gain an actual speedup, we need a dynamic data structure that supports faster insert, search and delete. Self-balancing Binary Search Tree (BST) is the right data structure. The term Self-balancing means the tree automatically keeps its height small after arbitrary insert and deleteoperations. Why does self-balancing matter? That is because most operations on a BST take time directly proportional to the height of the tree. Take a look at the following non-balanced BST which is skewed to the left:
+            6
+           /
+          5
+         /
+        4
+       /
+      3
+     /
+    2
+   /
+  1
+Figure 1. A non-balanced BST that is skewed to the left.
+Searching in the above BST degrades to linear time, which is like searching in a linked list. Now compare to the BST below which is balanced:
+          4
+        /   \
+       2     6
+      / \   /
+     1   3  5
+Figure 2. A balanced BST.
+Assume that nn is the total number of nodes in the tree, a balanced binary tree maintains its height in the order of h=logn. Thus it supports O(h)=O(logn) time for each of insert, search and delete operations.
+Here is the entire algorithm in pseudocode:
+* Initialize an empty BST set
+* Loop through the array, for each element xx
+    * Find the smallest element ss in set that is greater than or equal to xx, return true if s−x≤t
+    * Find the greatest element gg in set that is smaller than or equal to xx, return true if x−g≤t
+    * Put xx in set
+    * If the size of the set is larger than k, remove the oldest item.
+* Return false
+One may consider the smallest element s that is greater or equal to xx as the successor of x in the BST, as in: "What is the next greater value of x?". Similarly, we consider the greatest element gg that is smaller or equal to xx as the predecessor of x in the BST, as in: "What is the previous smaller value of x?". These two values ss and gg are the two closest neighbors from xx. Thus by checking the distance from them to xx, we can conclude if Condition 2 is satisfied.
+* Time complexity: O(nlog(min(n,k))). We iterate through the array of size nn. For each iteration, it costs O(logmin(k,n)) time (search, insert or delete) in the BST, since the size of the BST is upper bounded by both k and n.
+* Space complexity: O(min(n,k)). Space is dominated by the size of the BST, which is upper bounded by both k and n.
+
+public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if(nums.length == 0 || nums == null) return false;
+        if(k < 1 || t < 0) return false;
+        TreeSet<Long> set = new TreeSet<>();
+        for(int i = 0; i<nums.length; i++){
+            Long successor = set.ceiling((long)nums[i]);
+            if(successor != null && successor <= nums[i] + t) return true;
+            Long predecessor = set.floor((long)nums[i]);
+            if(predecessor != null && nums[i] <= predecessor + t) return true;
+            
+            set.add((long)nums[i]);
+            if(set.size() > k) set.remove((long)nums[i - k]);
+        }
+        return false;
+    }
+(3) bucket sort
+Algorithm
+Bucket sort is a sorting algorithm that works by distributing the elements of an array into a number of buckets. Each bucket is then sorted individually, using a different sorting algorithm. Here is an illustration of buckets.
+Figure 3. Illustration of buckets.
+From the above example, we have 8 unsorted integers. We create 5 buckets covering the inclusive ranges of [0,9], [10,19], [20, 29], [30, 39], [40, 49][0,9],[10,19],[20,29],[30,39],[40,49]individually. Each of the eight elements is in a particular bucket. For element with value xx, its bucket label is x / wx/w and here we have w = 10w=10. Sort each bucket using some other sorting algorithm and then collect all of them bucket by bucket.
+Back to our problem, the critical issue we are trying to solve is:
+1. For a given element xx is there an item in the window that is within the range of [x−t,x+t]?
+2. Could we do this in constant time?
+Let us consider an example where each element is a person's birthday. Your birthday, say some day in March, is the new element xx. Suppose that each month has 3030 days and you want to know if anyone has a birthday within t = 30t=30 days of yours. Immediately, we can rule out all other months except February, March, April.
+The reason we know this is because each birthday belongs to a bucket we called month! And the range covered by the buckets are the same as distance tt which simplifies things a lot. Any two elements that are not in the same or adjacent buckets must have a distance greater than tt.
+We apply the above bucketing principle and design buckets covering the ranges of ..., [0,t], [t+1, 2t+1], ......,[0,t],[t+1,2t+1],.... We keep the window using this buckets. Then, each time, all we need to check is the bucket that xx belongs to and its two adjacent buckets. Thus, we have a constant time algorithm for searching almost duplicate in the window.
+One thing worth mentioning is the difference from bucket sort – Each of our buckets contains at most one element at any time, because two elements in a bucket means "almost duplicate" and we can return early from the function. Therefore, a HashMap with an element associated with a bucket label is enough for our purpose.
+* Time complexity: O(n)
+* Space complexity: O(min(n,k))
+
+class Solution {
+    public boolean containsNearbyAlmostDuplicate(int[] nums, int k, int t) {
+        if(nums.length == 0 || nums == null) return false;
+        if(k < 1 || t < 0) return false;
+        Map<Long, Long> map = new HashMap<>();//key is bucket index
+        long w = (long)t+1;//[0,t]->width is t+1
+        for(int i = 0; i<nums.length; ++i){
+            long m = getId(nums[i],w);
+            //check if bucket m is empty, each bucket may contain only one element
+            if(map.containsKey(m)) return true;
+            //check the neighbor buckets for almost duplicate
+            if(map.containsKey(m-1) && Math.abs(nums[i] - map.get(m-1)) < w) return true;
+            if (map.containsKey(m + 1) && Math.abs(nums[i] - map.get(m + 1)) < w) return true;
+            
+            map.put(m, (long)nums[i]);
+            if(i>=k) map.remove(getId(nums[i-k], w));
+        }
+        return false;
+    }
+    private long getId(long x, long w){
+        return x<0?(x+1)/w - 1 : x/w;
+    }
+}
+
+221. Maximal Square
+(1) bruto force
+check every 1
+00 01 02
+10 11 12
+20 21 22
+* Time complexity: O((m*n)^2)
+* Space complexity: O(1)
+class Solution {
+    public int maximalSquare(char[][] matrix) {
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return 0;
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        int maxsqlen = 0;
+        for(int i = 0; i<rows; i++){
+            for(int j = 0; j<cols; j++){
+                if(matrix[i][j] == '1'){
+                    int sqlen = 1;
+                    boolean flag = true;
+                    while(sqlen+i<rows && sqlen+j<cols && flag){
+                        for(int k = j; k<=sqlen+j; k++){
+                            if(matrix[i+sqlen][k] == '0'){
+                                flag = false;
+                                break;
+                            }
+                        }
+                        for(int k = i; k<=sqlen+i; k++){
+                            if(matrix[k][j+sqlen] == '0'){
+                                flag = false;
+                                break;
+                            }
+                        }
+                        if(flag) sqlen++;
+                    }
+                    if(maxsqlen<sqlen) maxsqlen = sqlen;
+                }
+            }
+        }
+        return maxsqlen * maxsqlen;
+    }
+}
+(2) dynamic programming 
+dp[i][j] : max length of edge using matrix[i-1][j-1] as end point
+public int maximalSquare(char[][] matrix) {
+        if(matrix == null || matrix.length == 0 || matrix[0].length == 0) return 0;
+        int[][] dp = new int[matrix.length+1][matrix[0].length+1];
+        int max = 0;
+        for(int i = 1; i<=matrix.length; i++){
+            for(int j = 1; j<=matrix[0].length; j++){
+                if(matrix[i-1][j-1] == '1'){
+                    dp[i][j] = Math.min(Math.min(dp[i-1][j], dp[i][j-1]), dp[i-1][j-1])+1;
+                    max = Math.max(dp[i][j], max);
+                }
+            }
+        }
+        return max*max;
+    }
+
+222. Count Complete Tree Nodes
+(1) recursion
+* Time complexity : O(N).
+* Space complexity : O(d)=O(logN) to keep the recursion stack, where d is a tree depth. 
+public int countNodes(TreeNode root) {
+        if(root == null) return 0;
+        return countNodes(root.right)+countNodes(root.left)+1;
+    }
+(1)dfs
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int countNodes(TreeNode root) {
+        if(root == null) return 0;
+        int res = 0;
+        Stack<TreeNode> stack = new Stack<>();
+        stack.push(root);
+        while(!stack.isEmpty()){
+            TreeNode curr = stack.pop();
+            res++;
+            if(curr.right!=null) stack.push(curr.right);
+            if(curr.left!=null) stack.push(curr.left);
+        }
+        return res;
+    }
+
+223. Rectangle Area
+* Time complexity: O(1)
+* Space complexity: O(1)
+public int computeArea(int A, int B, int C, int D, int E, int F, int G, int H) {
+        int a1 = Math.abs((C-A)*(D-B));
+        int a2 = Math.abs((G-E)*(H-F));
+        boolean intersect = Math.max(A,E) < Math.min(C,G) && Math.max(B,F) < Math.min(D,H);
+        int overlap = Math.abs((Math.min(G,C) - Math.max(A,E)) * (Math.max(B,F) - Math.min(D,H)));
+        
+        return a1+a2 - (intersect?overlap:0);
+    }
+
+224. Basic Calculator Stack
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int calculate(String s) {
+        Stack<Integer> stack = new Stack<>();
+        int sign = 1;
+        int res = 0;
+        int number = 0;
+        for(int i = 0; i<s.length(); i++){
+            char c = s.charAt(i);
+            if(Character.isDigit(c)){
+                number = 10*number + (int)(c-'0');
+            }else if(c == '+'){
+                res += sign*number;
+                number = 0;
+                sign = 1;
+            }else if(c == '-'){
+                res += sign*number;
+                number = 0;
+                sign = -1;
+            }else if(c == '('){
+                //push result first, cause when we calculate, we calculate sign*() first
+                stack.push(res);
+                stack.push(sign);
+                sign = 1;//non-negative number
+                res = 0;
+            }else if(c == ')'){
+                res += sign*number;
+                number = 0;
+                res *= stack.pop();
+                res += stack.pop();
+            }
+        }
+        if(number!=0) res += sign*number;
+        return res;
+    }
+}
+
+225. Implement Stack using Queue
+(1) Two Queues
+Push
+The algorithm inserts each new element to queue q2 and keep it as the top element. In case queue q1 is not empty (there are elements in the stack), we remove all elements from q1 and add them to q2. In this way the new inserted element (top element in the stack) will be always positioned at the front of q2. We swap q1 with q2 to avoid copying all elements from q2 to q1.
+
+* Time complexity: PUSH O(n), the rest O(1)
+* Space complexity: O(n)
+class MyStack {
+    
+    int top;
+    private Queue<Integer> q1;
+    private Queue<Integer> q2;
+    
+    /** Initialize your data structure here. */
+    public MyStack() {
+        this.q1 = new LinkedList<>();
+        this.q2 = new LinkedList<>();
+    }
+    
+    /** Push element x onto stack. */
+    public void push(int x) {
+        q2.add(x);
+        top = x;
+        while(!q1.isEmpty()){
+            q2.add(q1.remove());
+        }
+        Queue<Integer> temp = q1;
+        q1 = q2;
+        q2 = temp;
+    }
+    
+    /** Removes the element on top of the stack and returns that element. */
+    public int pop() {
+        int res = q1.poll();
+        if(!q1.isEmpty()){
+            top = q1.peek();
+        }
+        return res;
+    }
+    
+    /** Get the top element. */
+    public int top() {
+        return top;
+    }
+    
+    /** Returns whether the stack is empty. */
+    public boolean empty() {
+        return q1.isEmpty();
+    }
+}
+
+/**
+ * Your MyStack object will be instantiated and called as such:
+ * MyStack obj = new MyStack();
+ * obj.push(x);
+ * int param_2 = obj.pop();
+ * int param_3 = obj.top();
+ * boolean param_4 = obj.empty();
+ */
+
+(2) one Queue
+Push
+When we push an element into a queue, it will be stored at back of the queue due to queue's properties. But we need to implement a stack, where last inserted element should be in the front of the queue, not at the back. To achieve this we can invert the order of queue elements when pushing a new element.
+
+* Time complexity: O(n)
+* Space complexity: O(n)
+class MyStack {
+    
+    private Queue<Integer> q;
+    
+    /** Initialize your data structure here. */
+    public MyStack() {
+        this.q = new LinkedList<>();
+    }
+    
+    /** Push element x onto stack. */
+    public void push(int x) {
+        q.add(x);
+        int size = q.size();
+        while(size>1){
+            q.add(q.remove());
+            size--;
+        }
+    }
+    
+    /** Removes the element on top of the stack and returns that element. */
+    public int pop() {
+        return q.remove();
+    }
+    
+    /** Get the top element. */
+    public int top() {
+        return q.peek();
+    }
+    
+    /** Returns whether the stack is empty. */
+    public boolean empty() {
+        return q.isEmpty();
+    }
+}
+
+/**
+ * Your MyStack object will be instantiated and called as such:
+ * MyStack obj = new MyStack();
+ * obj.push(x);
+ * int param_2 = obj.pop();
+ * int param_3 = obj.top();
+ * boolean param_4 = obj.empty();
+ */
+
+226. Invert Binary Tree
+* Time complexity: O(n)
+* Space complexity: O(n)
+(1) recursion
+public TreeNode invertTree(TreeNode root) {
+        if(root == null) return null;
+        TreeNode right = invertTree(root.right);
+        TreeNode left = invertTree(root.left);
+        root.left = right;
+        root.right = left;
+        return root;
+    }
+
+(2) iteration
+public TreeNode invertTree(TreeNode root) {
+        if(root == null) return null;
+        Queue<TreeNode> queue = new LinkedList<TreeNode>();
+        queue.add(root);
+        while(!queue.isEmpty()){
+            TreeNode curr = queue.poll();
+            TreeNode temp = curr.left;
+            curr.left = curr.right;
+            curr.right = temp;
+            if(curr.right!=null) queue.add(curr.right);
+            if(curr.left!=null) queue.add(curr.left);
+        }
+        return root;
+    }
+
+227. Basic Calculator II
+The integer division should truncate toward zero. 整除去掉小数
+public int calculate(String s) {
+        if(s == null || s.length() == 0) return 0;
+        int res = 0;
+        int number = 0;
+        char sign = '+’; //sign 记录的不是current遇到的operator，是前面一个operator
+        Stack<Integer> stack = new Stack<>();
+        for(int i = 0; i<s.length(); i++){
+            char c = s.charAt(i);
+            if(Character.isDigit(c)){
+                number = number*10 + (int)(c - '0');
+            }
+            if(!Character.isDigit(c) && c!=' ' || i == s.length()-1){  // i == s.length()-1, number 此时不为0
+                if(sign == '+') stack.push(number);
+                if(sign == '-') stack.push(-number);
+                if(sign == '*') stack.push(stack.pop() * number);
+                if(sign == '/') stack.push(stack.pop() / number);
+                sign = c;
+                number = 0;
+            }
+        }
+        for(int i : stack){
+            res += i;
+        }
+        return res;
+    }
+
+228. Summary Ranges
+* Time complexity: O(n)
+* Space complexity: O(1)
+public List<String> summaryRanges(int[] nums) {
+        
+        List<String> res = new ArrayList<>();
+        if(nums == null || nums.length == 0) return res;
+        for(int i = 0; i<nums.length; i++){
+            int num = nums[i];
+            while(i<nums.length-1 && nums[i]+1 == nums[i+1]){
+                i++;
+            }
+            if(num == nums[i]) res.add(num + "");
+            else res.add(num + "->" + nums[i]);
+        }
+        return res;
+    }
+
+229. Majority Element II
+ appear more than ⌊ n/3 ⌋times.
+(1) HashMap
+* Time complexity: O(n)
+* Space complexity: O(n)
+public List<Integer> majorityElement(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        if(nums == null || nums.length == 0) return res;
+        Map<Integer, Integer> map = new HashMap<>();
+        for(int num : nums){
+            map.put(num, map.getOrDefault(num, 0) + 1);
+        }
+        int bound = nums.length/3;
+        for(int key: map.keySet()){
+            if(map.get(key) > bound) res.add(key);
+        }
+        // for (Map.Entry<Integer, Integer> entry: map.entrySet()) {
+        //     if (entry.getValue() > bound)
+        //         res.add(entry.getKey());
+        // }
+        return res;
+    }
+(2) Boyer-Moore Voting Algorithm
+This time is n/3, so we at most have two number that are satisfied conditions.
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public List<Integer> majorityElement(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        if(nums == null || nums.length == 0) return res;
+        
+        int number1 = 0, number2 = 0, count1 = 0, count2 = 0;
+        //voting, find two numbers with highest voting
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] == number1) count1++;
+            else if(nums[i] == number2) count2++;
+            else if(count1 == 0) {
+                number1 = nums[i];
+                count1 = 1;
+            }else if(count2 == 0){
+                number2 = nums[i];
+                count2 = 1;
+            }else{
+                count1--;
+                count2--;
+            }
+        }
+        // revoting, since the element with second highest occurrence may not be answer.
+       //找到的第二个数可能因为后面的元素很少所以不能够抵消， 所以再次vote一遍
+        count1 = 0;
+        count2 = 0;
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] == number1) count1++;
+            else if(nums[i] == number2) count2++;
+        }
+        if(count1>nums.length/3) res.add(number1);
+        if(count2>nums.length/3) res.add(number2);
+        return res;
+    }
+}
+
+230. Kth Smallest Element in a BST
+Follow up:
+What if the BST is modified (insert/delete operations) often and you need to find the kth smallest frequently? How would you optimize the kthSmallest routine?
+
+inorder traversal is ascending order, so we can build a inorder bst tree and get the k-1 element in the array
+(1) iteration
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int kthSmallest(TreeNode root, int k) {
+        Stack<TreeNode> stack = new Stack<>();
+        List<Integer> nums = new ArrayList();
+        TreeNode curr = root;
+        while(curr!=null || !stack.isEmpty()){
+            while(curr!=null){
+                stack.push(curr);
+                curr = curr.left;
+            }
+            curr = stack.pop();
+            nums.add(curr.val);
+            curr = curr.right;
+        }
+        return nums.get(k-1);
+    }
+
+version no array:
+public int kthSmallest(TreeNode root, int k) {
+        Stack<TreeNode> stack = new Stack<>();
+        TreeNode curr = root;
+        int count = k;
+        while(curr!=null || !stack.isEmpty()){
+            while(curr!=null){
+                stack.push(curr);
+                curr = curr.left;
+            }
+            curr = stack.pop();
+            count--;
+            if(count == 0) return curr.val;
+            curr = curr.right;
+        }
+        return -1;
+    }
+(2) recursion
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    private int count = 0;
+    private int res = 0;
+    public int kthSmallest(TreeNode root, int k) {
+        count = k;
+        helper(root);
+        return res;
+    }
+    private void helper(TreeNode root){
+        if(root == null) return;
+        helper(root.left);
+        count--;
+        if(count == 0) res = root.val;
+        helper(root.right);
+    }
+}
+
+231. Power Of Two
+(1) n /= 2
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public boolean isPowerOfTwo(int n) {
+        if(n == 0) return false;
+        if(n == 1) return true;
+        while(n%2 == 0) n /= 2;
+        return n == 1;
+    }
+(1) bit manipulation
+
+ public boolean isPowerOfTwo(int n) {
+        return n > 0 && (n&(n-1)) == 0;
+    }
+
+232. Implement Queue using Stacks
+(1)Two stacks
+
+class MyQueue {
+
+    private Stack<Integer> s1;
+    private Stack<Integer> s2;
+    
+    /** Initialize your data structure here. */
+    public MyQueue() {
+        s1 = new Stack<Integer>();
+        s2 = new Stack<Integer>();
+    }
+    
+    /** Push element x to the back of queue. */
+    public void push(int x) {
+        while(!s1.isEmpty()){
+            s2.push(s1.pop());
+        }
+        s2.push(x);
+        while(!s2.isEmpty()){
+            s1.push(s2.pop());
+        }
+        
+    }
+    
+    /** Removes the element from in front of queue and returns that element. */
+    public int pop() {
+        return s1.pop();
+    }
+    
+    /** Get the front element. */
+    public int peek() {
+        return s1.peek();
+    }
+    
+    /** Returns whether the queue is empty. */
+    public boolean empty() {
+        return s1.isEmpty();
+    }
+}
+
+/**
+ * Your MyQueue object will be instantiated and called as such:
+ * MyQueue obj = new MyQueue();
+ * obj.push(x);
+ * int param_2 = obj.pop();
+ * int param_3 = obj.peek();
+ * boolean param_4 = obj.empty();
+ */
+
+233. Number Of Digit One
+(1) 找规律..
+//number of 1 for hundred place:   0, 1, >=2 :
+//case 1: n=3141092, a= 31410, b=92. hundred place is 1: 3141 *100 次.
+//case 2: n=3141192, a= 31411, b=92. hundred place is 1: 3141 *100 + (92+1) 次.
+//case 3: n=3141592, a= 31415, b=92. hundred place is 1: (3141+1) *100 次.
+example:
+Let n = 4560000
+How many nums with "1" at the thousand's position?
+4551000 to 4551999 (1000)
+
+4541000 to 4541999 (1000)
+
+4531000 to 4531999 (1000)
+
+...
+
+1000 to 1999 (1000)
+That's 456 * 1000
+What if n = 4561234?
+4561000-4561234 (1234+1)
+
+4551000 to 4551999 (1000)
+
+4541000 to 4541999 (1000)
+
+4531000 to 4531999 (1000)
+
+...
+
+1000 to 1999 (1000)
+That's 456 * 1000 + 1234 + 1
+What if n = 4562345?
+
+4561000-4561999 (1000)
+
+4551000 to 4551999 (1000)
+
+4541000 to 4541999 (1000)
+
+4531000 to 4531999 (1000)
+
+...
+
+1000 to 1999 (1000)
+That's 456*1000 + 1000
+Same for hundred's position.
+Let n = 4012
+How many nums with "1" at the hundred's position?
+3100-3999 (100)
+
+2100-2999 (100)
+
+1100-1999 (100)
+
+100 to 199 (100)
+
+That's 4 * 100
+Let n = 4111
+4100-4111 ( 11 + 1)
+
+3100-3999 (100)
+
+2100-2999 (100)
+
+1100-1999 (100)
+
+100 to 199 (100)
+
+That's 4 * 100 + 11 + 1
+Let n = 4211
+4100-4199 (100)
+
+3100-3999 (100)
+
+2100-2999 (100)
+
+1100-1999 (100)
+
+100 to 199 (100)
+
+That's 4 * 100 + 100
+Same for ten's digit
+Let n = 30
+
+How many nums with "1" at the ten's position?
+210-219 (10)
+
+110-119 (10)
+
+10-19 (10)
+That's 3 * 10
+Let n = 312
+310-312 (2 + 1)
+
+210-219 (10)
+
+110-119 (10)
+
+10-19 (10)
+
+That's 3 * 10 + 2 + 1
+Let n = 322
+310-319 (10)
+
+210-219 (10)
+
+110-119 (10)
+
+10-19 (10)
+
+That's 3 * 10 + 10
+Same for one's digit
+Let n = 30
+
+How many nums with "1" at the one's position?
+21 (1)
+
+11 (1)
+
+1(1)
+
+That's 3 * 1
+Let n = 31
+
+How many "1" are there at the one's position?
+
+31 (1)
+
+21 (1)
+
+11 (1)
+
+1 (1)
+That's 3 * 1 + 1
+Let n = 32
+
+How many "1" are there at the one's position?
+
+31 (10)
+
+21 (10)
+
+11 (10)
+
+1 (10)
+
+That's 3 * 1 + 1
+Let n = 3
+only 1 (10 of "1" at one's position)
+That's 0 * 1 + 1
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public int countDigitOne(int n) {
+        if(n<=0) return 0;
+        int q = n, x = 1, ans = 0;
+        do{
+            int digit = q%10;
+            q /= 10;
+            ans += q*x;
+            if(digit == 1) ans += n%x +1;
+            if(digit > 1) ans += x;
+            x *= 10;
+        }while(q>0);
+        return ans;
+    }
+
+234. Palindrome Linked List
+Get length first in order to calculate mid,
+reverse the first half list.
+If length is odd, skip the middle element and start to compare from middle position.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public boolean isPalindrome(ListNode head) {
+        ListNode curr = head;
+        int length = 0;
+        while(curr!=null){
+            length++;
+            curr = curr.next;
+        }
+        int mid = length / 2;
+        //reverse the first half
+        ListNode prev = null;
+        curr = head;
+        for(int i = 0; i<mid; i++){
+            ListNode temp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = temp;
+        }
+        if(length % 2 == 1) curr = curr.next;// skip the middle element if odd length
+        for(int i = 0; i<mid; i++){
+            if(curr.val!=prev.val) return false;
+            else{
+                curr = curr.next;
+                prev = prev.next;
+            }
+        }
+        return true;
+    }
