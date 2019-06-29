@@ -1,0 +1,271 @@
+213. House Robber II dynamic programming
+Similar to house robber 1, we just keep two array, 0-last second, and 1- last
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public int rob(int[] nums) {
+        if(nums == null || nums.length == 0) return 0;
+        if(nums.length == 1) return nums[0];
+        return Math.max(helper(nums, 0, nums.length-2), helper(nums, 1, nums.length-1));
+    }
+    private int helper(int[] nums, int low, int high){
+        int excludeCurr = 0;
+        int includeCurr = 0;
+        for(int i = low; i<=high; i++){
+            int temp = excludeCurr;// dp[i-2];
+            excludeCurr = Math.max(excludeCurr, includeCurr);// dp[i-1], it's next i's dp[i-2]
+            includeCurr = nums[i] + temp; // current dp[i]
+        }
+        return Math.max(excludeCurr, includeCurr);
+    }
+}
+
+214. Shortest Palindrome
+(1) bruto force
+Start from index [0, s.length()-1], check if the whole string is palindrome, if not, check [0, s.length()-2].
+After finding the longest palindrome, reverse the rest and add it too s.
+* Time complexity: O(n^2)
+* Space complexity: O(1)
+public String shortestPalindrome(String s) {
+        int i = 0;
+        int j = s.length() - 1;
+        int end = s.length() - 1;
+        while(i<j){
+            if(s.charAt(i) == s.charAt(j)){
+                i++;
+                j--;
+            }else{
+                i = 0;
+                end-- ;
+                j = end;
+            }
+        }
+        return new StringBuilder(s.substring(end+1)).reverse().toString()+s;
+    }
+(2) KMP解法
+* Time complexity: O(n)
+* Space complexity: O(n)
+public String shortestPalindrome(String s) {
+        String r = new StringBuilder(s).reverse().toString();
+        String t = s + "#" + r;
+        int[] next = new int[t.length()];
+        for(int i = 1; i<t.length(); ++i){
+            int j = next[i-1];
+            while(j>0 && t.charAt(i)!=t.charAt(j)) j = next[j-1];
+            j += (t.charAt(i) == t.charAt(j)) ? 1:0;
+            next[i] = j;
+        }
+        return r.substring(0, s.length() - next[t.length()-1])+s;
+    }
+kmp：
+https://www.cnblogs.com/grandyang/p/6992403.html
+
+215. Kth Largest Element in an Array
+(1) Priority Queue
+3,2,1,5,6,4
+3
+2,3
+1,2,3->2,3
+2,3,5 -> 3,5
+3,5,6 -> 5,6
+4,5,6 -> 5,6
+* Time complexity: O(nlogk)
+* Space complexity: O(k)
+public int findKthLargest(int[] nums, int k) {
+        if(nums == null || nums.length == 0) return 0;
+        PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+        for(int num : nums){
+            minHeap.offer(num);
+            if(minHeap.size()>k) minHeap.poll();
+        }
+        return minHeap.poll();
+    }
+(2) QuickSelect
+(this algorithm works well even for arrays with duplicates.)
+The approach is basically the same as for quicksort. For simplicity let's notice that kth largest element is the same as N - kth smallest element, hence one could implement kth smallest algorithm for this problem.
+First one chooses a pivot, and defines its position in a sorted array in a linear time. This could be done with the help of partition algorithm.
+To implement partition one moves along an array, compares each element with a pivot, and moves all elements smaller than pivot to the left of the pivot.
+As an output we have an array where pivot is on its perfect position in the ascending sorted array, all elements on the left of the pivot are smaller than pivot, and all elements on the right of the pivot are larger or equal to pivot.
+Hence the array is now split into two parts. If that would be a quicksort algorithm, one would proceed recursively to use quicksort for the both parts that would result in \mathcal{O}(N \log N)O(NlogN)time complexity. Here there is no need to deal with both parts since now one knows in which part to search for N - kth smallest element, and that reduces average time complexity to \mathcal{O}(N)O(N).
+Finally the overall algorithm is quite straightforward :
+* Choose a random pivot.
+* Use a partition algorithm to place the pivot into its perfect position pos in the sorted array, move smaller elements to the left of pivot, and larger or equal ones - to the right.
+* Compare pos and N - k to choose the side of array to proceed recursively.
+! Please notice that this algorithm works well even for arrays with duplicates.
+
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public int findKthLargest(int[] nums, int k) {
+        if(nums == null || nums.length == 0) return 0;
+        return quickSelect(nums, 0, nums.length-1, nums.length-k);
+    }
+    private int quickSelect(int[] nums, int left, int right, int kSmallest){
+        //Returns the k-th smallest element of list within left..right.
+        if(left == right) return nums[left];
+        int pivotIndex = left;//choose left index as start pivot
+        pivotIndex = partition(nums, left, right, pivotIndex);
+        
+        if(kSmallest == pivotIndex) return nums[kSmallest];
+        else if(kSmallest<pivotIndex) return quickSelect(nums, left, pivotIndex-1, kSmallest);
+        else return quickSelect(nums, pivotIndex+1, right, kSmallest);
+        
+    }
+    private int partition(int[] nums, int left, int right, int pivotIndex){
+        int pivot = nums[pivotIndex];
+        //1. move pivot to right;
+        swap(nums, pivotIndex, right);
+        int storeIndex = left;
+        
+        //2. move all smaller elements to the left
+        for(int i = left; i<=right; i++){
+            if(nums[i]<pivot){
+                swap(nums, storeIndex, i);
+                storeIndex++;
+            }
+        }
+        
+        //3. move pivot to its final place
+        swap(nums, storeIndex, right);
+        
+        return storeIndex;
+    }
+    private void swap(int[] nums,int a, int b){
+        int temp = nums[a];
+        nums[a] = nums[b];
+        nums[b] = temp;
+    }
+}
+216. Combination Sum III backtracking
+Find all possible combinations of k numbers that add up to a number n, given that only numbers from 1 to 9 can be used and each combination should be a unique set of numbers.
+* Time complexity: O(2^n)
+* Space complexity: O(n)
+class Solution {
+    public List<List<Integer>> combinationSum3(int k, int n) {
+        List<List<Integer>> res = new ArrayList();
+        helper(res, new ArrayList<Integer>(), k, 1, n);
+        return res;
+    }
+    private void helper(List<List<Integer>> res, List<Integer> list, int k, int start, int n){
+        if(list.size() == k && n == 0) {
+            res.add(new ArrayList<Integer>(list));
+            return;
+        }
+        for(int i = start; i<=9; i++){
+            list.add(i);
+            helper(res, list, k, i+1, n-i);
+            list.remove(list.size()-1);
+        }
+    }
+}
+
+217. Contains Duplicate HashSet
+* Time complexity: O(n)
+* Space complexity: O(n)
+public boolean containsDuplicate(int[] nums) {
+        Set<Integer> set = new HashSet<>();
+        for(int i = 0; i<nums.length; i++){
+            if(!set.add(nums[i])) return true;
+        }
+        return false;
+    }
+
+218. The skyline problem
+如果按照矩形来处理将会非常麻烦，可以把这些矩形拆成两个点，一个左上顶点，一个右上顶点，这个题相当于处理2*n个边的问题，每一个边有一个x-axis和一个height，把所给的triplet转换成[x-axis, height]，对这些顶点按x-axis排序。然后开始遍历这些点，用一个最大堆来记录高度，对于左顶点，将height加入堆中。对于右顶点，从堆中移出height，同时也意味这这个矩形的结束。堆顶是所有顶点中最高的点，是当前图形的最高位置。只要这个点没被移出堆，说明这个最高的矩形还没结束。如果堆顶高度值出现了变化，说明出现了拐点，记录相应位置到结果中。
+具体代码中，为了在排序后的顶点列表中区分左右顶点，同一个图形的左右顶点height一个是正数值，一个是负数值。
+(1) 自建一个名为Height的数据结构，保存一个building的index和height。约定，当height为负数时表示这个高度为height的building起始于index；height为正时表示这个高度为height的building终止于index。
+(2) 对building数组进行处理，每一行[ Li, Ri, Hi ]，根据Height的定义，转换为两个Height的对象，即，Height(Li, -Hi) 和 Height(Ri, Hi)。 将这两个对象存入heights这个List中。
+(3) 写个Comparator对heights进行升序排序，首先按照index的大小排序，若index相等，则按height大小排序，以保证一栋建筑物的起始节点一定在终止节点之前。
+(4) 将heights转换为结果。使用PriorityQueue对高度值进行暂存。遍历heights，遇到高度为负值的对象时，表示建筑物的起始节点，此时应将这个高度加PriorityQueue。遇到高度为正值的对象时，表示建筑物的终止节点，此时应将这个高度从PriorityQueue中除去。且在遍历的过程中检查，当前的PriorityQueue的peek()是否与上一个iteration的peek()值（prev）相同，若否，说明出现了拐点，则应在结果中加入[当前对象的index, 当前PriorityQueue的peek()]，并更新prev的值。
+(1)sweep line + heap
+* Time complexity: O(n*n)
+* Space complexity: O(n)
+class Solution {
+    public List<List<Integer>> getSkyline(int[][] buildings) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<int[]> heights = new ArrayList<>();
+        for(int[] b: buildings){
+            heights.add(new int[]{b[0], -b[2]});//left -height
+            heights.add(new int[]{b[1], b[2]});//right height
+        }
+        Collections.sort(heights, (a,b) -> (a[0] == b[0]) ? a[1]-b[1] : a[0]-b[0]);//acsending order
+        PriorityQueue<Integer> heap = new PriorityQueue<>((a,b)->(b-a));// descending order
+        heap.offer(0);
+        int prev = 0;
+        for(int[] h:heights){
+            if(h[1]<0){
+                heap.offer(-h[1]);
+            }else{
+                heap.remove(h[1]);
+            }
+            int curr = heap.peek();
+            if(prev!=curr){
+                res.add(Arrays.asList(h[0], curr));
+                prev = curr;
+            }
+        }
+        return res;
+    }
+}
+(2)
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+class Solution {
+    public List<List<Integer>> getSkyline(int[][] buildings) {
+        List<List<Integer>> res = new ArrayList<>();
+        List<int[]> heights = new ArrayList<>();
+        for (int[] b : buildings) {
+            heights.add(new int[]{b[0], - b[2]});
+            heights.add(new int[]{b[1], b[2]});
+        }
+        Collections.sort(heights, (a, b) -> (a[0] == b[0]) ? a[1] - b[1] : a[0] - b[0]);
+        TreeMap<Integer, Integer> map = new TreeMap<>(Collections.reverseOrder());
+        map.put(0,1);
+        int prev = 0;
+        for (int[] h: heights) {
+            if (h[1] < 0) {
+                map.put(-h[1], map.getOrDefault(-h[1], 0) + 1);
+            } else {
+                int cnt = map.get(h[1]);
+                if (cnt == 1) {
+                    map.remove(h[1]);
+                } else {
+                    map.put(h[1], cnt - 1);
+                }
+            }
+            int cur = map.firstKey();
+            if (prev != cur) {
+                res.add(Arrays.asList(h[0], cur));
+                prev = cur;
+            }
+        }
+        return res;
+    }
+}
+219. Contain Duplicate II
+(1) bruto force
+* Time complexity: O(n*k)
+* Space complexity: O(1)
+ public boolean containsNearbyDuplicate(int[] nums, int k) {
+        for(int i = 0; i<nums.length; i++){
+            int target = nums[i];
+            for(int j = i+1; j<=i+k&&j<nums.length; j++){
+                if(target == nums[j]) return true;
+            }
+        }
+        return false;
+    }
+(2) HashSet
+* Time complexity: O(n)
+* Space complexity: O(n)
+public boolean containsNearbyDuplicate(int[] nums, int k) {
+        if(nums == null ||nums.length == 0) return false;
+        Set<Integer> set = new HashSet<>();
+        for(int i = 0; i<nums.length; i++){
+            if(i>k){
+                set.remove(nums[i-k-1]);
+            }
+            if(!set.add(nums[i])) return true;
+        }
+        return false;
+    }
