@@ -1,0 +1,188 @@
+246. Strobogrammatic Number
+A strobogrammatic number is a number that looks the same when rotated 180 degrees (looked at upside down).
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public boolean isStrobogrammatic(String num) {
+        int left = 0, right = num.length() - 1;
+        while(left <= right) {
+            if(num.charAt(left) == '6' && num.charAt(right) == '9' || num.charAt(left) == '9' && num.charAt(right) == '6' || num.charAt(left) == '0' && num.charAt(right) == '0' || num.charAt(left) == '1' && num.charAt(right) == '1' || num.charAt(left) == '8' && num.charAt(right) == '8') {
+                left++;
+                right--;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+247. Strobogrammatic Number II dfs
+* Time complexity: O(logn)
+* Space complexity: O(n)
+public List<String> findStrobogrammatic(int n) {
+        return helper(n, n);
+    }
+    public List<String> helper(int curr, int n){
+        if(curr == 0) 
+            return new ArrayList<>(Arrays.asList(""));
+        if(curr == 1)
+            return new ArrayList<>(Arrays.asList("0", "1", "8"));
+        
+        List<String> list = helper(curr - 2, n);
+        List<String> res = new ArrayList<>();
+        
+        for(int i = 0; i< list.size(); i++){
+            String temp = list.get(i);
+            if(curr != n){//0不能加在开头
+                res.add("0" + temp + "0");
+            }
+            res.add("1" + temp + "1");
+            res.add("6" + temp + "9");
+            res.add("9" + temp + "6");
+            res.add("8" + temp + "8");
+        }
+        return res;
+    }
+
+248. Strobogrammatic Number III dfs
+class Solution {
+    public int strobogrammaticInRange(String low, String high) {
+        int res = 0;
+        List<String> list = new ArrayList<>();
+        for(int i = low.length(); i<=high.length(); i++){
+            list.addAll(helper(i,i));
+        }
+        for(String num: list){
+            if((num.length() == low.length() && num.compareTo(low) < 0) ||
+              (num.length() == high.length() && num.compareTo(high) > 0)){
+                continue;
+            }
+            res++;
+        }
+        return res;
+    }
+    private List<String> helper(int curr, int max){
+        if(curr == 0) return new ArrayList<>(Arrays.asList(""));
+        if(curr == 1) return new ArrayList<>(Arrays.asList("1", "8", "0"));
+        
+        List<String> res = new ArrayList<>();
+        List<String> list = helper(curr - 2, max);
+        
+        for(int i = 0; i<list.size(); i++){
+            String temp = list.get(i);
+            if(curr != max) 
+                res.add("0"+temp+"0");
+            res.add("1"+temp+"1");
+            res.add("8"+temp+"8");
+            res.add("6"+temp+"9");
+            res.add("9"+temp+"6");
+        }
+        return res;
+    }
+}
+
+249. Group Shifted Strings HashMap
+字符串的每个字母和首字符的相对距离都是相等的，比如abc和efg互为偏移，对于abc来说，b和a的距离是1，c和a的距离是2，对于efg来说，f和e的距离是1，g和e的距离是2。再来看一个例子，az和yx，z和a的距离是25，x和y的距离也是25(直接相减是-1，这就是要加26然后取余的原因)，那么这样的话，所有互为偏移的字符串都有个unique的距离差，我们根据这个来建立映射就可以很好的进行单词分组。
+example: ab xy 的key都是ab
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public List<List<String>> groupStrings(String[] strings) {
+        Map<String, List<String>> map = new HashMap<>();
+        for(String str : strings){
+            String key = getKey(str);
+            if(map.containsKey(key)){
+                map.get(key).add(str);
+            }else{
+                List<String> list = new ArrayList<>();
+                list.add(str);
+                map.put(key, list);
+            }
+        }
+        return new ArrayList<List<String>> (map.values());
+    }
+    private String getKey(String word){
+        StringBuilder sb = new StringBuilder();
+        if(word.isEmpty()) return sb.toString();
+        char ch = word.charAt(0);
+        for(int i = 0; i<word.length(); i++){
+            sb.append((char)((word.charAt(i) - ch + 26) % 26));
+        }
+        return sb.toString();
+    }
+}
+
+250. Count Univalue Subtrees
+A Uni-value subtree means all nodes of the subtree have the same value. root.val == root.left.val == root.right.val
+note that && short circuits but & does not - both sides of the or get evaluated with & so we explore all possible routes
+(1) dfs
+* Time complexity: O(n)
+* Space complexity: O(H)
+class Solution {
+    private int count = 0;
+    public int countUnivalSubtrees(TreeNode root) {
+        isUni(root);
+        return count;
+    }
+    private boolean isUni(TreeNode root){
+        if(root == null)
+            return true;
+        
+        if(isUni(root.left) & isUni(root.right)){
+            if(root.left!=null && root.left.val!=root.val)
+                return false;
+            if(root.right!=null && root.right.val!=root.val)
+                return false;
+            count++;
+            return true;
+        }
+        
+        return false;
+    }
+}
+
+251. Flatten 2D Vector design 
+
+class Vector2D {
+
+    private Queue<Integer> queue;
+    private Iterator<Integer> iterator;
+    
+    public Vector2D(int[][] v) {
+        queue = new LinkedList<>();
+        for(int i = 0; i<v.length; i++){
+            int[] sub = v[i];
+            for(int j = 0; j<sub.length; j++){
+                queue.add(sub[j]);
+            }
+        }
+        iterator = queue.iterator();
+    }
+    
+    public int next() {
+        return iterator.next();
+    }
+    
+    public boolean hasNext() {
+        return iterator.hasNext();
+    }
+}
+
+/**
+ * Your Vector2D object will be instantiated and called as such:
+ * Vector2D obj = new Vector2D(v);
+ * int param_1 = obj.next();
+ * boolean param_2 = obj.hasNext();
+ */
+
+252. Meeting Rooms
+(1) sort
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+public boolean canAttendMeetings(int[][] intervals) {
+        Arrays.sort(intervals, (a,b)-> a[0] - b[0]);//按 start time 从小到大排列
+        for(int i = 1; i<intervals.length; i++){
+            if(intervals[i-1][1]>intervals[i][0]) return false; //if former end > current start, return false
+        }
+        return true;
+    }
+
