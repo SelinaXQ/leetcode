@@ -1,0 +1,410 @@
+253. Meeting Rooms II
+https://leetcode.com/problems/meeting-rooms-ii/discuss/203658/HashMapTreeMap-resolves-Scheduling-Problem
+(1) TreeMap
+example:
+ [[0,30],[5,10],[15,20]]
+
++1 +1  -1  +1  -1  -1
+0     5  10  15  20  30 
+res = 2
+遍历时间区间，对于起始时间，映射值自增1，对于结束时间，映射值自减1，然后我们定义结果变量 res，和房间数 rooms，我们遍历 TreeMap，时间从小到大，房间数每次加上映射值，然后更新结果 res，遇到起始时间，映射是正数，则房间数会增加，如果一个时间是一个会议的结束时间，也是另一个会议的开始时间，则映射值先减后加仍为0，并不用分配新的房间，而结束时间的映射值为负数更不会增加房间数。
+public int minMeetingRooms(int[][] intervals) {
+        if(intervals.length == 0|| intervals[0].length == 0 || intervals == null) return 0;
+        
+        Map<Integer, Integer> map = new TreeMap<>();
+        for(int[] it : intervals){
+            map.put(it[0], map.getOrDefault(it[0], 0) + 1);
+            map.put(it[1], map.getOrDefault(it[1], 0) - 1);
+        }
+        int room = 0, res = 0;
+        for(int v: map.values()){
+            res = Math.max(res, room += v);
+        }
+        return res;
+    }
+(2) two array ( fastest )
+用两个一维数组，分别保存起始时间和结束时间，然后各自排个序，我们定义结果变量res和结束时间指针 endpos，然后我们开始遍历，如果当前起始时间小于结束时间指针的时间，则结果自增1，反之结束时间指针自增1，这样我们可以找出重叠的时间段，从而安排新的会议室
+public int minMeetingRooms(int[][] intervals) {
+        if(intervals.length == 0|| intervals[0].length == 0 || intervals == null) return 0;
+        
+        int endPos = 0;
+        int res = 0;
+        int[] start = new int[intervals.length];
+        int[] end = new int[intervals.length];
+        for(int i = 0; i<intervals.length; i++){
+            start[i] = intervals[i][0];
+            end[i] = intervals[i][1];
+        }
+        Arrays.sort(start);
+        Arrays.sort(end);
+        for(int i = 0; i<intervals.length; i++){
+            if(start[i] < end[endPos])
+                res++;
+            else
+                endPos++;
+        }
+        return res;
+    }
+(3) heap (最小堆 priorityQueue)
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+先把所有的时间区间按照起始时间排序，然后新建一个最小堆，开始遍历时间区间，如果堆不为空，且首元素小于等于当前区间的起始时间，我们去掉堆中的首元素，把当前区间的结束时间压入堆，由于最小堆是小的在前面，那么假如首元素小于等于起始时间，说明上一个会议已经结束，可以用该会议室开始下一个会议了，所以不用分配新的会议室，遍历完成后堆中元素的个数即为需要的会议室的个数.
+public int minMeetingRooms(int[][] intervals) {
+        if(intervals.length == 0|| intervals[0].length == 0 || intervals == null) return 0;
+        
+        Arrays.sort(intervals, (a,b) -> a[0]-b[0]);
+        PriorityQueue<Integer> heap = new PriorityQueue<>(intervals.length, (a,b) -> a-b);
+        
+        heap.offer(intervals[0][1]);
+        for(int i = 1; i<intervals.length; i++){
+            if(heap.peek() <= intervals[i][0]){
+                heap.poll();
+            }
+            heap.add(intervals[i][1]);
+        }
+        return heap.size();
+    }
+
+254. Factor Combinations backtracking
+* Time complexity: O()
+* Space complexity: O(n)
+public List<List<Integer>> getFactors(int n) {
+        List<List<Integer>> res = new ArrayList<>();
+        helper(res, n, new ArrayList<>(), 2);
+        return res;
+    }
+    private void helper(List<List<Integer>> res, int n, List<Integer> list, int start){
+        if(n == 1){
+            if(list.size() > 1) {//1和n本身不能算其因子
+                res.add(new ArrayList<>(list));
+                return;
+            }
+        }
+        for(int i = start; i<=n; i++){
+            if(n%i == 0){
+                list.add(i);
+                helper(res, n/i, list, i);
+                list.remove(list.size()-1);
+            }
+        }
+    }
+
+255. Verify Preorder Sequence in Binary Search Tree
+https://www.cnblogs.com/grandyang/p/5327635.html
+如果用中序遍历得到的结果就是有序数组，而先序遍历的结果就不是有序数组了，但是难道一点规律都没有了吗，其实规律还是有的，根据二叉搜索树的性质，当前节点的值一定大于其左子树中任何一个节点值，而且其右子树中的任何一个节点值都不能小于当前节点值，那么我们可以用这个性质来验证，举个例子，比如下面这棵二叉搜索树：
+     5
+    / \
+   2   6
+  / \
+ 1   3
+其先序遍历的结果是{5, 2, 1, 3, 6}, 我们先设一个最小值min, 然后遍历数组，如果当前值小于这个最小值min，返回false，对于根节点，我们将其压入栈中，然后往后遍历，如果遇到的数字比栈顶元素小，说明是其左子树的点，继续压入栈中，直到遇到的数字比栈顶元素大，那么就是右边的值了，我们需要找到是哪个节点的右子树，所以我们更新min值并删掉栈顶元素，然后继续和下一个栈顶元素比较，如果还是大于，则继续更新min值和删掉栈顶，直到栈为空或者当前栈顶元素大于当前值停止，压入当前值，这样如果遍历完整个数组之前都没有返回false的话，最后返回true即可。
+(1) Stack 
+public boolean verifyPreorder(int[] preorder) {
+        Stack<Integer> stack = new Stack<>();
+        int min = Integer.MIN_VALUE;
+        for(int num: preorder){
+            if(num < min) 
+                return false;
+            
+            while(!stack.isEmpty() && num > stack.peek()){//search left tree to get min
+                min = stack.pop();
+            }
+            stack.push(num);
+        }
+        return true;
+    }
+(2) O(1) space
+为了使空间复杂度为常量，我们不能使用stack，所以我们直接修改preorder，将low值存在preorder的特定位置即可，前提是不能影响当前的遍历。
+public boolean verifyPreorder(int[] preorder) {
+        int min = Integer.MIN_VALUE;
+        int i = -1;
+        for(int num: preorder){
+            if(num < min) return false;
+            while(i >= 0 && num > preorder[i]){
+                min = preorder[i];
+                i--;
+            }
+            i++;
+            preorder[i] = num;
+        }
+        return true;
+    }
+256. Paint House
+只需要关注左边不和当前的颜色一样就可以了
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int minCost(int[][] costs) {
+        if(costs == null || costs.length == 0)
+            return 0;
+        
+        int n = costs.length-1;
+        for(int i = 1; i<costs.length; i++){
+            costs[i][0] += Math.min(costs[i-1][1], costs[i-1][2]);
+            costs[i][1] += Math.min(costs[i-1][0], costs[i-1][2]);
+            costs[i][2] += Math.min(costs[i-1][0], costs[i-1][1]);
+        }
+        return Math.min(costs[n][0], Math.min(costs[n][1], costs[n][2]));
+    }
+
+257. Binary Tree Path
+* Time complexity: O(n)
+* Space complexity: O(n)
+(1) recursion
+public List<String> binaryTreePaths(TreeNode root) {
+        List<String> res = new ArrayList<>();
+        if(root == null)
+            return res;
+        helper(res, root, "");
+        return res;
+    }
+    private void helper(List<String> res, TreeNode root, String path){
+        if(root.left == null && root.right == null){
+            res.add(path + root.val);
+        }
+        if(root.left!=null){
+            helper(res, root.left, path + root.val + "->"); 
+        }
+        if(root.right!=null){
+            helper(res, root.right, path + root.val + "->");
+        }
+    }
+(2) iteration dfs
+class Solution {
+    public List<String> binaryTreePaths(TreeNode root) {
+        List<String> res = new ArrayList<>();
+        if(root == null) 
+            return res;
+        
+        Stack<TreeNode> node = new Stack<>();
+        Stack<String> path = new Stack<>();
+        
+        node.push(root);
+        path.push("");
+        
+        while(!node.isEmpty()){
+            TreeNode currNode = node.pop();
+            String currPath = path.pop();
+            
+            if(currNode.left == null && currNode.right == null){
+                res.add(currPath + currNode.val);
+            }
+            if(currNode.left!=null){
+                node.push(currNode.left);
+                path.push(currPath + currNode.val + "->");
+            }
+            if(currNode.right!=null){
+                node.push(currNode.right);
+                path.push(currPath + currNode.val + "->");
+            }
+        }
+        return res;
+    }
+    
+}
+
+258. Add Digits recursion
+public int addDigits(int num) {
+        if(num < 10) return num;
+        int temp = 0;
+        while(num!=0){
+            temp += num%10;
+            num = num/10;
+        }
+        return addDigits(temp);
+    }
+
+Follow up: no recursion
+观察1到20的所有的树根：
+1    1
+
+2    2
+
+3    3
+
+4    4
+
+5    5
+
+6    6
+
+7    7
+
+8    8    
+
+9    9    
+
+10    1
+
+11    2
+
+12    3    
+
+13    4
+
+14    5
+
+15    6
+
+16    7
+
+17    8
+
+18    9
+
+19    1
+
+20    2
+ 
+根据上面的列举，我们可以得出规律，每9个一循环，所有大于9的数的树根都是对9取余，那么对于等于9的数对9取余就是0了，为了得到其本身，而且同样也要对大于9的数适用，我们就用(n-1)%9+1这个表达式来包括所有的情况。还有个特殊情况需要考虑一下，当num为0的时候，那么就会出现 -1 % 9 的情况，C++和Java会给出商0余-1的结果，而Python会给出商-1余8的结果，那么只好做个额外判断了，特殊处理一下0的情况。
+public int addDigits(int num) {
+        return (num == 0) ? 0 : (num - 1) % 9 + 1;
+    }
+259. 3Sum Smaller
+Two pointers
+public int threeSumSmaller(int[] nums, int target) {
+        if(nums == null || nums.length < 3) return 0;
+        
+        int res = 0;
+        Arrays.sort(nums);
+        for(int i = 0; i<nums.length - 2; i++){
+            int currTarget = target - nums[i];
+            int low = i+1;
+            int high = nums.length-1;
+            while(low < high){
+                if(nums[low] + nums[high] < currTarget){
+                    res += high - low; // pairs with one of the index=low that satisfy the condition
+                    low++;
+                }else 
+                    high--;
+            }
+        }
+        return res;
+    }
+example: 
+
+
+260. Single Number III  bit manipulation
+https://www.cnblogs.com/grandyang/p/4741122.html
+这道题其实是很巧妙的利用了 Single Number 的解法，因为那道解法是可以准确的找出只出现了一次的数字，但前提是其他数字必须出现两次才行。而这题有两个数字都只出现了一次，那么我们如果能想办法把原数组分为两个小数组，不相同的两个数字分别在两个小数组中，这样分别调用 Single Number 的解法就可以得到答案。那么如何实现呢，首先我们先把原数组全部异或起来，那么我们会得到一个数字，这个数字是两个不相同的数字异或的结果，我们取出其中任意一位为 ‘1’ 的位，为了方便起见，我们用 a &= -a 来取出最右端为 ‘1’ 的位，具体来说下这个是如何操作的吧。就拿题目中的例子来说，如果我们将其全部 '异或' 起来，我们知道相同的两个数 '异或' 的话为0，那么两个1，两个2，都抵消了，就剩3和5 '异或' 起来，那么就是二进制的 11 和 101 '异或' ，得到110。然后我们进行 a &= -a 操作。首先变负数吧，在二进制中负数采用补码的形式，而补码就是反码 +1，那么 110 的反码是 11...1001，那么加1后是 11...1010，然后和 110 相与，得到了 10，就是代码中的 diff 变量。得到了这个 diff，就可以将原数组分为两个数组了。为啥呢，我们想阿，如果两个相同的数字 '异或' ，每位都会是0，而不同的数字 '异或' ，一定会有对应位不同，一个0一个1，这样 '异或' 是1。比如3和5的二进制 11 和 101，如果从低往高看，最开始产生不同的就是第二位，那么我们用第二位来和数组中每个数字相与，根据结果的不同，一定可以把3和5区分开来，而其他的数字由于是成对出现，所以区分开来也是成对的，最终都会 '异或' 成0，不会3和5产生影响。分别将两个小组中的数字都异或起来，就可以得到最终结果了。
+
+public int[] singleNumber(int[] nums) {
+        if(nums == null || nums.length < 2) return new int[]{-1,-1};
+        
+        int diff = 0;
+        for(int num: nums){
+            diff ^= num;
+        }
+        int[] res = new int[2];
+        diff &= -diff;
+        
+        for(int num: nums){
+            if((num & diff) == 0)
+                res[0] ^= num;
+            else
+                res[1] ^= num;
+        }
+        return res;
+    }
+
+261. Graph Valid Tree graph
+(1) union find 最快
+public boolean validTree(int n, int[][] edges) {
+        int[] nums = new int[n];
+        for(int i = 0; i< n; i++){
+            nums[i] = i;
+        }
+        
+        for(int i = 0; i<edges.length; i++){
+            int x = find(nums, edges[i][0]);
+            int y = find(nums, edges[i][1]);
+            
+            if(x == y){
+                return false;
+            }
+            
+            nums[x] = y;
+        }
+        return edges.length == n - 1;
+    }
+    
+    int find(int[] nums, int i ){
+        if(nums[i] == i){
+            return i;
+        }
+        return find(nums,nums[i]);
+    }
+(2) dfs
+给了我们一个无向图，让我们来判断其是否为一棵树，我们知道如果是树的话，所有的节点必须是连接的，也就是说必须是连通图，而且不能有环，所以我们的焦点就变成了验证是否是连通图和是否含有环。我们首先用DFS来做，根据pair来建立一个图的结构，用邻接链表来表示，还需要一个set visited来记录某个节点是否被访问过，然后我们用DFS来搜索节点0，遍历的思想是，当DFS到某个节点，先看当前节点是否被访问过，如果已经被访问过，说明环存在，直接返回false，如果未被访问过，我们现在将其状态标记为已访问过，然后我们到邻接链表里去找跟其相邻的节点继续递归遍历，注意我们还需要一个变量parent来记录上一个节点，以免回到上一个节点，这样遍历结束后，我们就把和节点0相邻的节点都标记为true，然后我们在看v里面是否还有没被访问过的节点，如果有，则说明图不是完全连通的，返回false，反之返回true
+
+class Solution {
+    public boolean validTree(int n, int[][] edges) {
+        List<List<Integer>> graph = new ArrayList<>();
+        for(int i = 0; i<n; i++){
+            graph.add(new ArrayList<>());
+        }
+        for(int i = 0; i<edges.length; i++){
+            graph.get(edges[i][0]).add(edges[i][1]);
+            graph.get(edges[i][1]).add(edges[i][0]);
+        }
+        Set<Integer> visited = new HashSet<>();
+        visited.add(0);
+        boolean res = helper(graph, visited, 0, -1);
+        if(res == false) return false;
+        return visited.size() == n? true:false;
+    }
+    private boolean helper(List<List<Integer>> graph, Set<Integer> visited, int node, int parent){
+        List<Integer> child = graph.get(node);
+        for(int v : child){
+            if(v == parent) continue;
+            if(visited.contains(v)) return false;
+            visited.add(v);
+            boolean res = helper(graph, visited, v, node);
+            if(res == false) return false;
+        }
+        return true;
+    }
+}
+
+(3) bfs
+需要用queue来辅助遍历，这里我们没有用一维向量来标记节点是否访问过，而是用了一个set，如果遍历到一个节点，在set中没有，则加入set，如果已经存在，则返回false，还有就是在遍历邻接链表的时候，遍历完成后需要将节点删掉。
+class Solution {
+    public boolean validTree(int n, int[][] edges) {
+       List<List<Integer>> graph = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            graph.add(new ArrayList<>());
+        }
+        for (int i = 0; i < edges.length; i++) {
+            graph.get(edges[i][0]).add(edges[i][1]);
+            graph.get(edges[i][1]).add(edges[i][0]);
+        }
+        Set<Integer> visited = new HashSet<>();
+        Queue<Integer> queue = new LinkedList<>();
+        queue.offer(0);
+        while (!queue.isEmpty()) {
+            int node = queue.poll();
+            if (visited.contains(node))
+                return false;
+            List<Integer> child = graph.get(node);
+            for (int v : child) {
+                queue.offer(v);
+                graph.get(v).remove(new Integer(node));
+            }
+            visited.add(node);
+        }
+
+        return visited.size() == n;
+    }
+}
+
+263. Ugly Number
+一直除2，3，5 直到num == 1
+public boolean isUgly(int num) {
+        if(num <= 0) return false;
+        while(num % 2 == 0)
+            num /= 2;
+        while(num % 3 == 0)
+            num /= 3;
+        while(num % 5 == 0)
+            num /= 5;
+        return num == 1;
+    }
