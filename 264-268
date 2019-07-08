@@ -1,0 +1,219 @@
+264. Ugly Number II dynamic programming
+Hint:
+(1)An ugly number must be multiplied by either 2, 3, or 5 from a smaller ugly number.
+(2)The key is how to maintain the order of the ugly numbers. Try a similar approach of merging from three sorted lists: L1, L2, and L3.
+(3)Assume you have Uk, the kth ugly number. Then Uk+1 must be Min(L1 * 2, L2 * 3, L3 * 5).
+
+
+仔细观察上述三个列表，我们可以发现每个子列表都是一个丑陋数分别乘以2,3,5，而要求的丑陋数就是从已经生成的序列中取出来的，我们每次都从三个列表中取出当前最小的那个加入序列。
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int nthUglyNumber(int n) {
+        if(n == 1)
+            return 1;
+        int p2 = 0, p3 = 0, p5 = 0;
+        int[] dp = new int[n];
+        dp[0] = 1;
+        for(int i = 1; i<n; i++){
+            dp[i] = Math.min(dp[p2] * 2 , Math.min(dp[p3] * 3, dp[p5] * 5));
+            if(dp[i] == dp[p2] * 2) 
+                p2++;
+            if(dp[i] == dp[p3] * 3)
+                p3++;
+            if(dp[i] == dp[p5] * 5)
+                p5++;
+        }
+        return dp[n-1];
+    }
+
+265. Paint House II dynamic programming
+这道题是之前那道Paint House的拓展，那道题只让用红绿蓝三种颜色来粉刷房子，而这道题让我们用k种颜色，这道题不能用之前那题的解法，会TLE。这题的解法的思路还是用DP，但是在找不同颜色的最小值不是遍历所有不同颜色，而是用min1和min2来记录之前房子的最小和第二小的花费的颜色，如果当前房子颜色和min1相同，那么我们用min2对应的值计算，反之我们用min1对应的值，这种解法实际上也包含了求次小值的方法。
+* Time complexity: O(nk)
+* Space complexity: O(nk)
+public int minCostII(int[][] costs) {
+        if(costs == null || costs.length == 0 || costs[0].length == 0)
+            return 0;
+        int min1 = -1, min2 = -1;//the color
+        int[][] dp = new int[costs.length][costs[0].length];
+        dp = costs;
+        for(int i = 0; i<dp.length; i++){
+            int last1 = min1, last2 = min2;
+            min1 = -1; min2 = -2;
+            for(int j = 0; j<dp[i].length; j++){
+                if(j != last1){
+                    dp[i][j] += last1 < 0 ? 0 : dp[i-1][last1];
+                }else{
+                    dp[i][j] += last2 < 0 ? 0 : dp[i-1][last2];
+                }
+                if(min1 < 0 || dp[i][j] < dp[i][min1]){
+                    min2 = min1; min1 = j;
+                }else if(min2 < 0 || dp[i][j] < dp[i][min2]){
+                    min2 = j;
+                }
+            }
+        }
+        return dp[costs.length-1][min1];
+    }
+
+266. Palindrome Permutation
+最多一个字母数量为奇数
+(1) array
+* Time complexity: O(n)
+* Space complexity: O(128)
+public boolean canPermutePalindrome(String s) {
+        int[] map = new int[128];
+        int count = 0;
+        for(int i = 0; i<s.length(); i++){
+            map[s.charAt(i)]++;
+            if(map[s.charAt(i)] % 2 == 0){
+                count--;
+            }else
+                count++;
+        }
+        return count<=1;
+    }
+(2) HashSet
+* Time complexity: O(n)
+* Space complexity: O(n)
+public boolean canPermutePalindrome(String s) {
+        Set<Character> set = new HashSet<>();
+        for(int i = 0; i<s.length(); i++){
+            if(!set.add(s.charAt(i))){
+                set.remove(s.charAt(i));
+            }
+        }
+        return set.size() <= 1;
+    }
+
+267. Palindrome Permutation II backtracking
+Hint:
+If a palindromic permutation exists, we just need to generate the first half of the string.
+To generate all distinct permutations of a (half of) string, use a similar approach from: Permutations II or Next Permutation.
+如果回文全排列存在，我们只需要生成前半段字符串即可，后面的直接根据前半段得到。那么我们再进一步思考，由于回文字符串有奇偶两种情况，偶数回文串例如abba，可以平均分成前后半段，而奇数回文串例如abcba，需要分成前中后三段，需要注意的是中间部分只能是一个字符，那么我们可以分析得出，如果一个字符串的回文字符串要存在，那么奇数个的字符只能有0个或1个，其余的必须是偶数个，所以我们可以用哈希表来记录所有字符的出现个数，然后我们找出出现奇数次数的字符加入mid中，如果有两个或两个以上的奇数个数的字符，那么返回空集，我们对于每个字符，不管其奇偶，都将其个数除以2的个数的字符加入t中，这样做的原因是如果是偶数个，那么将其一般加入t中，如果是奇数，如果有1个，那么除以2是0，不会有字符加入t，如果是3个，那么除以2是1，取一个加入t。等我们获得了t之后，t是就是前半段字符，我们对其做全排列，每得到一个全排列，我们加上mid和该全排列的逆序列就是一种所求的回文字符串，这样我们就可以得到所有的回文全排列了。在全排序的子函数中有一点需要注意的是，如果我们直接用数组来保存结果时，并且t中如果有重复字符的话可能会出现重复项，比如 t = "baa" 的话，那么最终生成的结果会有重复项，不信可以自己尝试一下。这里简单的说明一下，当 start=0，i=1 时，我们交换后得到 aba，在之后当 start=1，i=2 时，交换后可以得到 aab。但是在之后回到第一层当baa后，当 start=0，i=2 时，交换后又得到了 aab，重复就产生了。那么其实最简单当去重复的方法就是将结果res定义成HashSet，利用其去重复的特性，可以保证我们得到的是没有重复的。
+* Time complexity : O((n/2+1)!). At most n/2! permutations need to be generated in the worst case. Further, for each permutation generated, string.reverse() function will take n/4 time.
+* Space complexity : O(n). The depth of recursion tree can go upto n/2n/2 in the worst case.
+class Solution {
+    
+    Set <String> set = new HashSet <> ();
+    public List <String> generatePalindromes(String s) {
+        int[] map = new int[128];
+        char[] st = new char[s.length() / 2];
+        if (!canPermutePalindrome(s, map))
+            return new ArrayList < > ();
+        char ch = 0;
+        int k = 0;
+        for (int i = 0; i < map.length; i++) {
+            if (map[i] % 2 == 1)
+                ch = (char) i;
+            for (int j = 0; j < map[i] / 2; j++) {
+                st[k++] = (char) i;
+            }
+        }
+        permute(st, 0, ch);
+        return new ArrayList < String > (set);
+    }
+    public boolean canPermutePalindrome(String s, int[] map) {
+        int count = 0;
+        for (int i = 0; i < s.length(); i++) {
+            map[s.charAt(i)]++;
+            if (map[s.charAt(i)] % 2 == 0)
+                count--;
+            else
+                count++;
+        }
+        return count <= 1;
+    }
+    public void swap(char[] s, int i, int j) {
+        char temp = s[i];
+        s[i] = s[j];
+        s[j] = temp;
+    }
+    private void permute(char[] s, int l, char ch) {
+        if (l == s.length) {
+            set.add(new String(s) + (ch == 0 ? "" : ch) + new StringBuffer(new String(s)).reverse());
+        } else {
+            for (int i = l; i < s.length; i++) {
+                if (s[l] != s[i] || l == i) {
+                    swap(s, l, i);
+                    permute(s, l + 1, ch);
+                    swap(s, l, i);
+                }
+            }
+        }
+    }
+}
+
+268. Missing Number
+(1) sort
+edge case: whether start from 0 and end at n
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+public int missingNumber(int[] nums) {
+        Arrays.sort(nums);
+        if(nums[nums.length-1] != nums.length) 
+            return nums.length;
+        if(nums[0] != 0) 
+            return 0;
+        
+        for(int i = 1; i<nums.length; i++){
+            int expect = nums[i-1]+1;
+            if(nums[i] != expect){
+                return expect;
+            }
+        }
+        return -1;
+    }
+(2) HashSet
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int missingNumber(int[] nums) {
+        Set<Integer> set = new HashSet<>();
+        for(int num: nums){
+            set.add(num);
+        }
+        
+        for(int i = 0; i<nums.length+1; i++){
+            if(!set.contains(i)) return i;
+        }
+        
+        return -1;
+    }
+(3) Bit manipulation
+Algorithm
+Because we know that nums contains nn numbers and that it is missing exactly one number on the range [0..n-1][0..n−1], we know that nn definitely replaces the missing number in nums. Therefore, if we initialize an integer to nn and XOR it with every index and value, we will be left with the missing number. Consider the following example (the values have been sorted for intuitive convenience, but need not be):
+Index
+0 
+1 
+2 
+3 
+Value
+0 
+1 
+3 
+4 
+
+
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int missingNumber(int[] nums) {
+        int missing = nums.length;
+        for(int i = 0; i<nums.length; i++){
+            missing = missing ^ i ^ nums[i];
+        }
+        return missing;
+    }
+
+(4) Gauss’s formula
+compute the sum of first n number.
+
+
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int missingNumber(int[] nums) {
+        int expectedSum = nums.length*(nums.length + 1)/2;
+        int actualSum = 0;
+        for (int num : nums) 
+            actualSum += num;
+        return expectedSum - actualSum;
+    }
+
