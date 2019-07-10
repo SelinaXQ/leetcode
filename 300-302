@@ -1,0 +1,236 @@
+300. Longest Increasing Subsequence
+(1) dynamic programming
+维护一个一维dp数组，其中dp[i]表示以nums[i]为结尾的最长递增子串的长度，对于每一个nums[i]，我们从第一个数再搜索到i，如果发现某个数小于nums[i]，我们更新dp[i]，更新方法为dp[i] = max(dp[i], dp[j] + 1)，即比较当前dp[i]的值和那个小于num[i]的数的dp值加1的大小，我们就这样不断的更新dp数组，到最后dp数组中最大的值就是我们要返回的LIS的长度。
+* Time complexity: O(n^2)
+* Space complexity: O(n)
+public int lengthOfLIS(int[] nums) {
+        int[] dp = new int[nums.length];
+        Arrays.fill(dp, 1);
+        
+        int res = 0;
+        for(int i = 0; i<nums.length; i++){
+            for(int j = 0; j < i; j++){
+                if(nums[i] > nums[j]){
+                    dp[i] = Math.max(dp[i], dp[j] + 1);
+                }
+            }
+            res = Math.max(res, dp[i]);
+        }
+        return res;
+    }
+
+(2) binary search
+先建立一个空的dp数组，然后开始遍历原数组，对于每一个遍历到的数字，我们用二分查找法在dp数组找第一个不小于它的数字，如果这个数字不存在，那么直接在dp数组后面加上遍历到的数字，如果存在，则将这个数字更新为当前遍历到的数字，最后返回dp数字的长度即可。
+特别注意的是ends数组的值可能不是一个真实的LIS，比如若输入数组nums为{4, 2， 4， 5， 3， 7}，那么算完后的数组为{2， 3， 5， 7}
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+public int lengthOfLIS(int[] nums) {
+        List<Integer> dp = new ArrayList();
+        for(int i = 0; i < nums.length; i++){
+            int left = 0;
+            int right = dp.size();
+            while(left < right){
+                int mid = left + (right - left)/2;
+                if(dp.get(mid) < nums[i])
+                    left = mid + 1;
+                else 
+                    right = mid;
+            }
+            if(right >= dp.size()){
+                dp.add(nums[i]);
+            }else{
+                dp.set(right, nums[i]);
+            }
+        }
+        return dp.size();
+    }
+
+301. Remove Invalid Parentheses
+(1) bfs
+我们先把给定字符串排入队中，然后取出检测其是否合法，若合法直接返回，不合法的话，我们对其进行遍历，对于遇到的左右括号的字符，我们去掉括号字符生成一个新的字符串，如果这个字符串之前没有遇到过，将其排入队中，我们用哈希集合记录一个字符串是否出现过。我们对队列中的每个元素都进行相同的操作，直到队列为空还没找到合法的字符串的话，那就返回空集。
+* Time complexity: O(2^n)
+* Space complexity: O(n)
+class Solution {
+    public List<String> removeInvalidParentheses(String s) {
+        List<String> res = new ArrayList();
+        Set<String> set = new HashSet();
+        set.add(s);
+        Queue<String> q = new LinkedList<>();
+        q.offer(s);
+        boolean found = false;
+        while(!q.isEmpty()){
+            String cur = q.poll();
+            if(isValid(cur)){
+                res.add(cur);
+                found = true;
+            }
+            if(found) continue;//这一行很关键，确保了在使用BFS的时候只保留最少移除的情况
+            for(int i = 0; i<cur.length(); i++){
+                if(cur.charAt(i) != '(' && cur.charAt(i) != ')')
+                    continue;
+                String str = cur.substring(0, i) + cur.substring(i+1);
+                if(!set.contains(str)){
+                    q.offer(str);
+                    set.add(str);
+                }
+            }
+        }
+        return res;
+    }
+    
+    private boolean isValid(String str){
+        int cnt = 0;
+        for(int i = 0; i<str.length(); i++){
+            if(str.charAt(i) == '(')
+                cnt++;
+            else if(str.charAt(i) == ')'){
+                cnt--;
+                if(cnt < 0){
+                    return false;
+                }
+            }
+        }
+        return cnt == 0;
+    }
+}
+(2) recursion
+java 需要用StringBuilder, C++ 不用？
+这种解法首先统计了多余的半括号的数量，用cnt1表示多余的左括号，cnt2表示多余的右括号，因为给定字符串左右括号要么一样多，要么左括号多，要么右括号多，也可能左右括号都多，比如")("。所以cnt1和cnt2要么都为0，要么都大于0，要么一个为0，另一个大于0。好，下面进入我们的递归函数，首先判断，如果当cnt1和cnt2都为0时，说明此时左右括号个数相等了，我们调用isValid子函数来判断是否正确，正确的话加入结果res中并返回即可。否则从start开始遍历，这里的变量start表示当前递归开始的位置，我们不需要每次都从头开始，会有大量重复计算。而且对于多个相同的半括号在一起，我们只删除第一个，比如"())"，这里有两个右括号，我们不管删第一个还是删第二个右括号都会得到"()"，没有区别，所以只用算一次就行了，我们通过和上一个字符比较，如果不相同，说明是第一个右括号，如果相同则直接跳过。此时来看如果cnt1大于0，说明此时左括号多，而如果当前字符正好是左括号的时候，我们可以删掉当前左括号，继续调用递归，此时cnt1的值就应该减1，因为已经删掉了一个左括号。同理，如果cnt2大于0，说明此时右括号多，而如果当前字符正好是右括号的时候，我们可以删掉当前右括号，继续调用递归，此时cnt2的值就应该减1，因为已经删掉了一个右括号。
+class Solution {
+    public List<String> removeInvalidParentheses(String s) {
+        int rmL = 0, rmR = 0;
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == '(') {
+                rmL++;
+            } else if (s.charAt(i) == ')') {
+                if (rmL != 0) {
+                    rmL--;
+                } else {
+                    rmR++;
+                }
+            }
+        }
+        Set<String> res = new HashSet<>();
+        dfs(s, 0, res, new StringBuilder(), rmL, rmR, 0);
+        return new ArrayList<String>(res);
+    }
+
+    public void dfs(String s, int i, Set<String> res, StringBuilder sb, int rmL, int rmR, int open) {
+        if (rmL < 0 || rmR < 0 || open < 0) {
+            return;
+        }
+        if (i == s.length()) {
+            if (rmL == 0 && rmR == 0 && open == 0) {
+                res.add(sb.toString());
+            }        
+            return;
+        }
+
+        char c = s.charAt(i); 
+        int len = sb.length();
+
+        if (c == '(') {
+            dfs(s, i + 1, res, sb, rmL - 1, rmR, open);            // not use (
+            dfs(s, i + 1, res, sb.append(c), rmL, rmR, open + 1);       // use (
+
+        } else if (c == ')') {
+            dfs(s, i + 1, res, sb, rmL, rmR - 1, open);                // not use  )
+            dfs(s, i + 1, res, sb.append(c), rmL, rmR, open - 1);          // use )
+
+        } else {
+            dfs(s, i + 1, res, sb.append(c), rmL, rmR, open);    
+        }
+
+        sb.setLength(len);        
+    }
+}
+(3) dfs
+递归函数的参数中，last_i表示当前遍历到的位置，相当上面解法中的start，last_j表示上一个删除的位置，这样可以避免重复计算。然后有个括号字符数组，初始化时放入左括号和右括号。我们在递归函数中，从last_i开始遍历，在找正向括号的时候，用变量cnt表示括号数组中的左括号出现的次数，遇到左括号自增1，遇到右括号自减1。当左括号大于等于右括号的时候，我们直接跳过。这个循环的目的是要删除多余的右括号，所以当cnt小于0的时候，我们从上一个删除位置last_j开始遍历，如果当前是右括号，且是第一个右括号（关于这块可以参见上面解法中的分析），我们删除当前右括号，并调用递归函数。注意这个for循环结束后要直接返回，因为进这个for循环的都是右括号多的，删到最后最多是删成和左括号一样多，不需要再去翻转删左括号。好，最后来说这个最叼的翻转，当字符串的左括号个数大于等于右括号的时候，不会进入第二个for循环，自然也不会return。那么由于左括号的个数可能会要大于右括号，所以我们还要删除多余的左括号，所以我们将字符串反转一下，比如"(()"，反转变成")(("，此时虽然我们还是要删除多余的左括号，但是反转后就没有合法的括号了，所以变成了找反向括号")("，那么还是可以删除多余的左括号，然后我们判断此时括号数组的状态，如果是正向括号，说明此时正要删除左括号，那么就调用递归函数，last_i和last_j均重置为0，括号数组初始化为反向括号。如果此时已经是反向括号了，说明之前的左括号已经删掉了变成了")("，然后又反转了一下，变回来了"()"，那么就可以直接加入结果res了
+class Solution {
+    public List<String> removeInvalidParentheses(String s) {
+        List<String> res = new ArrayList<>();
+        helper(res, s, 0, 0, new char[] {'(', ')'});
+        return res;
+    }
+    private void helper(List<String> res, String s, int last_i, int last_j, char[] pair){
+        for(int count = 0, i = last_i; i<s.length(); i++){
+            if(s.charAt(i) == pair[0])
+                count++;
+            if(s.charAt(i) == pair[1])
+                count--;
+            if(count >= 0)
+                continue;
+            
+            //illegal right parenthesis
+            for(int j = last_j; j<=i; j++){
+                if(s.charAt(j) == pair[1] && (j == last_j || s.charAt(j-1) != pair[1])){
+                    helper(res, s.substring(0, j)+s.substring(j+1), i, j, pair);
+                }
+            }
+            return;
+        }
+        //reverse string for illegal left parenthesis
+        String reversed = new StringBuilder(s).reverse().toString();
+        if(pair[0] == '(')
+            helper(res, reversed, 0, 0, new char[]{')', '('});
+        else{
+            res.add(reversed);
+        }
+    }
+}
+
+302. Smallest Rectangle Enclosing Black Pixels
+(1) bruto force
+* Time complexity: O(m*n)
+* Space complexity: O(1)
+public int minArea(char[][] image, int x, int y) {
+        int top = x, bottom = x;
+        int left = y, right = y;
+        for(int i = 0; i<image.length; i++){
+            for(int j = 0; j<image[0].length; j++){
+                if(image[i][j] == '1'){
+                    left = Math.min(left,j);
+                    right = Math.max(right, j);
+                    top = Math.min(top, i);
+                    bottom = Math.max(bottom, i);
+                }
+            }
+        }
+        return (right - left + 1) * (bottom - top + 1);
+    }
+
+(2) binary search
+* Time complexity: O(nlogn)
+* Space complexity: O(1)
+class Solution {
+    public int minArea(char[][] image, int x, int y) {
+        int m = image.length;
+        int n = image[0].length;
+        int top = binary(image, true, 0, x, 0, n, true);
+        int bottom = binary(image, true, x+1, m, 0, n, false);
+        int left = binary(image, false, 0, y, top, bottom, true);
+        int right = binary(image, false, y+1, n, top, bottom, false);
+        return (right - left) * (bottom - top);
+    }
+    private int binary(char[][] image, boolean horizontal, int i, int j, int low, int high, boolean opt){
+        while(i<j){
+            int k = low, mid = (i+j)/2;
+            if(horizontal == true){
+                while(k<high && image[mid][k] == '0'){
+                    k++;
+                }
+            }else{
+                while(k<high && image[k][mid] == '0'){
+                    k++;
+                }
+            }
+            
+            if(k<high == opt){
+                j = mid;
+            }else{
+                i = mid+1;
+            }
+        }
+        return i;
+    }
+}
