@@ -1,0 +1,194 @@
+297. Serialize And Deserialize Binary Tree design
+(1) bfs
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Codec {
+
+    // Encodes a tree to a single string.
+    public String serialize(TreeNode root) {
+        if(root == null)
+            return "";
+        StringBuilder sb = new StringBuilder();
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        while(!queue.isEmpty()){
+            TreeNode cur = queue.poll();
+            if(cur == null){
+                sb.append("null ");
+                continue;
+            }
+            sb.append(cur.val + " ");
+            queue.offer(cur.left);
+            queue.offer(cur.right);
+        }
+        return sb.toString();
+    }
+
+    // Decodes your encoded data to tree.
+    public TreeNode deserialize(String data) {
+        if(data == "")
+            return null;
+        String[] str = data.split(" ");
+        TreeNode root = new TreeNode(Integer.parseInt(str[0]));
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        for(int i = 1; i<str.length; i++){
+            TreeNode cur = queue.poll();
+            if(!str[i].equals("null")){
+                cur.left = new TreeNode(Integer.parseInt(str[i]));
+                queue.offer(cur.left);
+            }
+            i++;
+            if(!str[i].equals("null")){
+                cur.right = new TreeNode(Integer.parseInt(str[i]));
+                queue.offer(cur.right);
+            }
+        }
+        return root;
+    }
+}
+
+// Your Codec object will be instantiated and called as such:
+// Codec codec = new Codec();
+// codec.deserialize(codec.serialize(root));
+(2) dfs
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Codec {
+
+    // Encodes a tree to a single string.
+    public String serialize(TreeNode root) {
+        if(root == null)
+            return "";
+        return sHelper(root, "");
+    }
+    private String sHelper(TreeNode root, String str){
+        if(root == null){
+            str += "null ";
+        }else{
+            str += String.valueOf(root.val) + " ";
+            str = sHelper(root.left, str);
+            str = sHelper(root.right, str);
+        }
+        return str;
+    }
+    // Decodes your encoded data to tree.
+    public TreeNode deserialize(String data) {
+        if(data == "")
+            return null;
+        String[] dataArr = data.split(" ");
+        List<String> list = new LinkedList<String>(Arrays.asList(dataArr));
+        return dHelper(list);
+    }
+    private TreeNode dHelper(List<String> list){
+        if(list.get(0).equals("null")){
+            list.remove(0);
+            return null;
+        }
+        TreeNode root = new TreeNode(Integer.valueOf(list.get(0)));
+        list.remove(0);
+        root.left = dHelper(list);
+        root.right = dHelper(list);
+        return root;
+    }
+}
+
+// Your Codec object will be instantiated and called as such:
+// Codec codec = new Codec();
+// codec.deserialize(codec.serialize(root));
+
+298. Binary Tree Longest Consecutive Sequence
+(1) recursion
+class Solution {
+    int res = 0;
+    public int longestConsecutive(TreeNode root) {
+        if(root == null)
+            return 0;
+        //int res = 0;
+        dfs(root, null, 0);
+        return res;
+    }
+    private void dfs(TreeNode root, TreeNode parent, int temp){
+        if(root == null) return;
+        if(parent!=null && root.val == parent.val + 1)
+            temp++;
+        else
+            temp = 1;
+        res = Math.max(res, temp);
+        dfs(root.left, root, temp);
+        dfs(root.right, root, temp);
+    }
+}
+(2) iteration
+以层序来遍历树，对于遍历到的节点，我们看其左右子节点有没有满足题意的，如果左子节点比其父节点大1，若右子节点存在，则排入queue，指针移到左子节点，反之若右子节点比其父节点大1，若左子节点存在，则排入queue，指针移到右子节点，依次类推直到queue为空。
+class Solution {
+    public int longestConsecutive(TreeNode root) {
+        int res = 0;
+        if(root == null) return res;
+        Queue<TreeNode> queue = new LinkedList<>();
+        queue.offer(root);
+        while(!queue.isEmpty()){
+            int len = 1;
+            TreeNode cur = queue.poll();
+            while((cur.left!=null && cur.left.val == cur.val + 1)||
+                  (cur.right!=null && cur.right.val == cur.val + 1)){
+                if(cur.left!=null && cur.left.val == cur.val + 1){
+                    if(cur.right!=null){
+                        queue.offer(cur.right);
+                    }
+                    cur = cur.left;
+                }
+                else if(cur.right!=null && cur.right.val == cur.val + 1){
+                    if(cur.left!=null){
+                        queue.offer(cur.left);
+                    }
+                    cur = cur.right;
+                }
+                len++;
+            }
+            if(cur.left!=null){
+                queue.offer(cur.left);
+            }
+            if(cur.right != null){
+                queue.offer(cur.right);
+            }
+            res = Math.max(res, len);
+        }
+        return res;
+    }
+}
+
+299. Bulls and Cows
+在处理不是bulls的位置时，我们看如果secret当前位置数字的映射值小于0，则表示其在guess中出现过，cows自增1，然后映射值加1，如果guess当前位置的数字的映射值大于0，则表示其在secret中出现过，cows自增1，然后映射值减1。
+* Time complexity: O(n)
+* Space complexity: O(1)
+public String getHint(String secret, String guess) {
+        int[] m = new int[256];
+        int bulls = 0, cows = 0;
+        for(int i = 0; i<secret.length(); i++){
+            if(secret.charAt(i) == guess.charAt(i))
+                bulls++;
+            else{
+                if(m[secret.charAt(i) - '0']++ < 0)
+                    cows++;
+                if(m[guess.charAt(i) - '0']-- > 0)
+                    cows++;
+            }
+        }
+        return String.valueOf(bulls) + "A" + String.valueOf(cows) + "B";
+    }
+
