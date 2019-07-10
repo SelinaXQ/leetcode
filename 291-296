@@ -1,0 +1,162 @@
+291. Word Pattern II
+startsWith(String str, int fromIndex)
+recursion
+* Time complexity: O()
+* Space complexity: O(n)
+class Solution {
+    public boolean wordPatternMatch(String pattern, String str) {
+        Map<Character, String> map = new HashMap<>();
+        Set<String> set = new HashSet<>();
+        return helper(pattern, str, 0, 0, map, set);
+    }
+    private boolean helper(String pattern, String str, int i, int j, Map<Character, String> map, Set<String> set){
+        if(i == pattern.length() && j == str.length())
+            return true;
+        if(i == pattern.length() || j == str.length())
+            return false;
+        
+        char c = pattern.charAt(i);
+        
+        if(map.containsKey(c)){
+            String temp = map.get(c);
+            if(!str.startsWith(temp, j))
+                return false;
+            return helper(pattern, str, i+1, j+temp.length(), map, set);
+        }
+        
+        
+        for(int k = j; k<str.length(); k++){
+            String temp = str.substring(j, k+1);
+            if(set.contains(temp))
+                continue;
+            map.put(c, temp);
+            set.add(temp);
+            if(helper(pattern, str, i+1, k+1, map, set)){
+                return true;
+            }
+            map.remove(c);
+            set.remove(temp);
+        }
+        
+        return false;
+    }
+}
+
+292. Nim Game
+列出1到10个的情况如下：
+1    Win
+2    Win
+3    Win
+4    Lost
+5    Win
+6    Win
+7    Win
+8    Lost
+9    Win
+10   Win
+* Time complexity: O(1)
+* Space complexity: O(1)
+public boolean canWinNim(int n) {
+        return n%4 == 0 ? false : true;
+    }
+generalize一下这道题，当可以拿1～n个石子时，那么个数为(n+1)的整数倍时一定会输
+
+293. Flip Game
+* Time complexity: O(n)
+* Space complexity: O(1)
+public List<String> generatePossibleNextMoves(String s) {
+        List<String> res = new ArrayList<>();
+        for(int i = 1; i<s.length(); i++){
+            if(s.charAt(i) == '+' && s.charAt(i-1) == '+'){
+                res.add(s.substring(0, i-1) + "--" + s.substring(i+1));
+            }
+        }
+        return res;
+    }
+
+294. Flip Game II
+recursion
+从第二个字母开始遍历整个字符串，如果当前字母和之前那个字母都是+，那么我们递归调用将这两个位置变为--的字符串，如果返回false，说明当前玩家可以赢，结束循环返回false.
+public boolean canWin(String s) {
+        for(int i = 1; i<s.length(); i++){
+            if(s.charAt(i) == '+' && s.charAt(i-1) == '+'
+              && !canWin(s.substring(0, i-1) + "--" + s.substring(i+1))){
+                return true;
+            }     
+        }
+        return false;
+    }
+
+295. Find Median from Data Stream
+Use two heaps leftQueue and rightQueue save the maximum element in the left part of data stream and minimum element in the right part of data stream respectively. Update the two heaps so that rightQueue.size() = leftQueue.size() or rightQueue.size() = leftQueue.size() + 1
+class MedianFinder {
+
+    PriorityQueue<Integer> leftQueue = new PriorityQueue<Integer>(Collections.reverseOrder()); //从大到小，largest value in left part
+    PriorityQueue<Integer> rightQueue = new PriorityQueue<Integer>();//从小到大, smallest value in right part
+    
+    /** initialize your data structure here. */
+    public MedianFinder() {
+        
+    }
+    
+    public void addNum(int num) {
+        rightQueue.offer(num);
+        leftQueue.offer(rightQueue.poll());
+        if(rightQueue.size() < leftQueue.size()){
+            rightQueue.offer(leftQueue.poll());
+        }
+    }
+    
+    public double findMedian() {
+        if(rightQueue.size() == 0)
+            return 0;
+        else if(leftQueue.size() == rightQueue.size())
+            return (double)(leftQueue.peek() + rightQueue.peek())/2; 
+        else 
+            return rightQueue.peek();
+    }
+}
+
+/**
+ * Your MedianFinder object will be instantiated and called as such:
+ * MedianFinder obj = new MedianFinder();
+ * obj.addNum(num);
+ * double param_2 = obj.findMedian();
+ */
+
+296. Best Meeting Point
+Hint:Try to solve it in one dimension first. How can this solution apply to the two dimension case?
+我们先看一维时有两个点A和B的情况,
+______A_____P_______B_______
+那么我们可以发现，只要开会为位置P在 [A, B] 区间内，不管在哪，距离之和都是A和B之间的距离，如果P不在 [A, B] 之间，那么距离之和就会大于A和B之间的距离，那么我们现在再加两个点C和D：
+______C_____A_____P_______B______D______
+我们通过分析可以得出，P点的最佳位置就是在 [A, B] 区间内，这样和四个点的距离之和为AB距离加上 CD 距离，在其他任意一点的距离都会大于这个距离，那么分析出来了上述规律，这题就变得很容易了，我们只要给位置排好序，然后用最后一个坐标减去第一个坐标，即 CD 距离，倒数第二个坐标减去第二个坐标，即 AB 距离，以此类推，直到最中间停止，那么一维的情况分析出来了，二维的情况就是两个一维相加即可。
+* Time complexity: O(m*n)
+* Space complexity: O(n)
+class Solution {
+    public int minTotalDistance(int[][] grid) {
+        List<Integer> rows = new ArrayList();
+        List<Integer> cols = new ArrayList();
+        
+        for(int i = 0; i<grid.length; i++){
+            for(int j = 0; j<grid[0].length; j++){
+                if(grid[i][j] == 1){
+                    rows.add(i);
+                    cols.add(j);
+                }
+            }
+        }
+       
+        return minDistance(rows)+minDistance(cols);
+    }
+    private int minDistance(List<Integer> list){
+        int res = 0;
+        Collections.sort(list);
+        int start = 0;
+        int end = list.size() - 1;
+        while(start<end){
+            res += list.get(end--) - list.get(start++);
+        }
+        return res;
+    }
+}
