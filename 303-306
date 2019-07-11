@@ -1,0 +1,185 @@
+303. Range Sum Query - Immutable design
+class NumArray {
+
+    private int[] sums;
+    public NumArray(int[] nums) {
+        sums = new int[nums.length+1];
+        for(int i = 0; i<nums.length; i++){
+            sums[i+1] = sums[i] + nums[i];
+        }
+    }
+    
+    public int sumRange(int i, int j) {
+        return sums[j+1] - sums[i];
+    }
+}
+
+/**
+ * Your NumArray object will be instantiated and called as such:
+ * NumArray obj = new NumArray(nums);
+ * int param_1 = obj.sumRange(i,j);
+ */
+
+304. Range Sum Query 2D - Immutable dynamic programming
+https://leetcode.com/problems/range-sum-query-2d-immutable/solution/
+# approach 4
+class NumMatrix {
+
+    private int[][] dp;
+    public NumMatrix(int[][] matrix) {
+        if(matrix.length == 0 || matrix[0].length == 0)
+            return;
+        dp = new int[matrix.length+1][matrix[0].length+1];
+        for(int i = 0; i<matrix.length; i++){
+            for(int j = 0; j<matrix[0].length; j++){
+                dp[i+1][j+1] = dp[i+1][j] + dp[i][j+1] + matrix[i][j] - dp[i][j];
+            }
+        }
+    }
+    
+    public int sumRegion(int row1, int col1, int row2, int col2) {
+        return dp[row2+1][col2+1] - dp[row1][col2+1] - dp[row2+1][col1] + dp[row1][col1];
+    }
+}
+
+/**
+ * Your NumMatrix object will be instantiated and called as such:
+ * NumMatrix obj = new NumMatrix(matrix);
+ * int param_1 = obj.sumRegion(row1,col1,row2,col2);
+ */
+
+305. Number Of Island II union find
+我们需要一个长度为m*n的一维数组来标记各个位置属于哪个岛屿，我们假设每个位置都是一个单独岛屿，岛屿编号可以用其坐标位置表示，但是我们初始化时将其都赋为-1，这样方便我们知道哪些位置尚未变成岛屿。然后我们开始遍历陆地数组，将其岛屿编号设置为其坐标位置，然后岛屿计数加1，我们此时开始遍历其上下左右的位置，遇到越界或者岛屿标号为-1的情况直接跳过，现在知道我们初始化为-1的好处了吧，遇到是water的地方直接跳过。否则我们用getRoot来查找邻居位置的岛屿编号，同时也用getRoot来查找当前点的编号，这一步就是经典的UF算法的操作了，因为当前这两个land是相邻的，它们是属于一个岛屿，所以其getRoot函数的返回值suppose应该是相等的，但是如果返回值不同，说明我们需要合并岛屿，将两个返回值建立关联，并将岛屿计数cnt减1。当我们遍历完当前点的所有邻居时，该合并的都合并完了，将此时的岛屿计数cnt存入结果中.
+* Time complexity: O(k*k)
+* Space complexity: O(M*N)
+
+class Solution {
+    public List<Integer> numIslands2(int m, int n, int[][] positions) {
+        List<Integer> res = new ArrayList<>();
+        if(positions == null || positions.length == 0 || positions[0].length == 0)
+            return res;
+        int[] roots = new int[m*n];
+        Arrays.fill(roots, -1);
+        int[][] dirs = new int[][] {{-1,0},{0, -1}, {1, 0}, {0, 1}};
+        int cnt = 0;
+        for(int i = 0; i<positions.length; i++){
+            int row = positions[i][0];
+            int col = positions[i][1];
+            int id = row * n + col;
+            if(roots[id] == -1){//最开始每个position都是一个岛
+                roots[id] = id;
+                cnt++;
+            }
+            for(int[] dir: dirs){
+                int x = row+dir[0];
+                int y = col+dir[1];
+                int curId = x*n + y;
+                if(x<0 || y<0 || x>=m || y>=n || roots[curId] == -1){
+                    continue;
+                }
+                int p = findRoot(roots, curId);
+                int q = findRoot(roots, id);
+                if(p!=q){//没有相同的root， 需要合并
+                    roots[p] = q;
+                    cnt--;
+                }
+            }
+            res.add(cnt);
+        }
+        return res;
+    }
+    private int findRoot(int[] roots, int id){
+        return (id == roots[id]) ? id : findRoot(roots, roots[id]);
+    }
+}
+
+306. Additive Number 斐波那切数列
+(1) bruto force
+我们让第一个数字先从一位开始，第二个数字从一位，两位，往高位开始搜索，前两个数字确定了，相加得到第三位数字，三个数组排列起来形成一个字符串，和原字符串长度相比，如果小于原长度，那么取出上一次计算的第二个和第三个数，当做新一次计算的前两个数，用相同的方法得到第三个数，再加入当前字符串，再和原字符串长度相比，以此类推，直到当前字符串长度不小于原字符串长度，比较两者是否相同，相同返回true，不相同则继续循环。如果所有情况都遍历完了还是没有返回true，则说明不是Additive Number，返回false.
+需要注意的是substring()方法使用时startIndex, endIndex 要弄清楚
+string之间比较是否相等不能用 == ， 要用.equals()
+* Time complexity: O(n*n)
+* Space complexity: O(1)
+class Solution {
+    public boolean isAdditiveNumber(String num) {
+        for(int i = 1; i<num.length(); i++){
+            String s1 = num.substring(0, i);
+            System.out.println("s1," + s1);
+            if(s1.length() > 1 && s1.charAt(0) == '0')
+                break;
+            for(int j = i+1; j+i-1<=num.length(); j++){
+                String s2 = num.substring(i, j);
+                System.out.println("s2," + s2);
+                Long d1 = Long.parseLong(s1);
+                Long d2 = Long.parseLong(s2);
+                if(s2.length() > 1 && s2.charAt(0) == '0')
+                    break;
+                Long next = d1 + d2;
+                String nextStr = String.valueOf(next);
+                System.out.println("nextStr," + nextStr);
+                if(j+nextStr.length() < num.length()){
+                   System.out.println("substring," + num.substring(j, j+nextStr.length())); 
+                }
+                
+                if(j+nextStr.length() < num.length() && !nextStr.equals(num.substring(j, j+nextStr.length())))
+                    continue;
+                String allStr = s1 + s2 + nextStr;
+                System.out.println("allStr," + allStr);
+                while(allStr.length() < num.length()){
+                    d1 = d2;
+                    d2 = next;
+                    next = d1 + d2;
+                    nextStr = String.valueOf(next);
+                    allStr += nextStr;
+                }
+                if(allStr.equals(num))
+                    return true;
+            }
+        }
+        return false;
+    }
+}
+
+(2) recursion
+class Solution {
+    public boolean isAdditiveNumber(String num) {
+        String a = "";
+        String b = "";
+        for(int i =0; i<num.length()/3+1; i++){
+            a = num.substring(0, i + 1);
+            if (a.length() > 1 && a.charAt(0) == '0') {
+                continue;
+            }
+            for (int j = i + 1; j < num.length(); j++) {
+                b = num.substring(i + 1, j + 1);
+                if (b.charAt(0) == '0' && b.length() > 1) {
+                    continue;
+                }
+                if (valid(num.substring(j + 1), Long.parseLong(a), Long.parseLong(b))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public boolean valid(String str, long a, long b) {
+        long sum = a + b;
+        String tempStr = String.valueOf(sum);
+        int len = tempStr.length();
+        if (str.length() < len) {
+            return false;
+        }
+        if (str.length() == len && str.equals(tempStr)) {
+            return true;
+        }
+        if (str.substring(0, len).equals(tempStr)) {
+            return valid(str.substring(len), b, sum);
+        }
+        return false;
+    }
+    
+}
+
+follow up 说是让我们handle超大整数的溢出情况，那么我们想，上面的解法中哪块可能溢出啊，当然只有将子串转为长整型long的时候，假如此时字符串特别长，甚至超出了长整型的范围，那么我们就不能用stol了，此时就不能转换了，那么我们只能强行将两个字符串相加了，这里用的又是另外一道题目 Add Strings 的知识点了，这样我们就完美的避开了可能溢出的情况了
+Add Strings https://www.cnblogs.com/grandyang/p/5944311.html
+
