@@ -1,0 +1,180 @@
+313. Super Ugly Number
+
+
+class Solution {
+    public int nthSuperUglyNumber(int n, int[] primes) {
+        int[] pointer = new int[primes.length];
+        Arrays.fill(pointer, 0);
+        int ugly[] = new int[n];
+        ugly[0] = 1;
+        for(int i = 1; i<n; i++){
+            int min = Integer.MAX_VALUE;
+            int minIndex = 0;
+            for(int j = 0; j<primes.length; j++){
+                if(ugly[pointer[j]] * primes[j] < min){
+                    min = ugly[pointer[j]] * primes[j];
+                    minIndex = j;
+                }else if(ugly[pointer[j]] * primes[j] == min){
+                    pointer[j]++;
+                }
+            }
+            ugly[i] = min;
+            pointer[minIndex]++;
+        }
+        return ugly[n-1];
+    }
+}
+314. Binary Tree Vertical Order Traversal iteration
+从root开始的index设为0， left 减1， right 加1，以此来区分。
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public List<List<Integer>> verticalOrder(TreeNode root) {
+        List<List<Integer>> res = new ArrayList();
+        if(root == null)
+            return res;
+        Queue<TreeNode> bfsQ = new LinkedList();
+        Queue<Integer> indexQ = new LinkedList();
+        HashMap<Integer, List<Integer>> map = new HashMap();
+        bfsQ.offer(root);
+        //set the root as index 0 , left wil be negative, right will be positive
+        indexQ.offer(0);
+        int min = 0;
+        int max = 0;
+        while(!bfsQ.isEmpty()){
+            int qSize = bfsQ.size();
+            for(int i = 0; i<qSize; i++){
+                TreeNode cur = bfsQ.poll();
+                int index = indexQ.poll();
+                if(map.containsKey(index)){
+                    map.get(index).add(cur.val);
+                }else if(!map.containsKey(index)){
+                    List<Integer> list = new ArrayList();
+                    list.add(cur.val);
+                    map.put(index, list);
+                }
+                if(cur.left!=null){
+                    bfsQ.offer(cur.left);
+                    indexQ.offer(index-1);
+                    min = Math.min(min, index-1);
+                }
+                if(cur.right != null){
+                    bfsQ.offer(cur.right);
+                    indexQ.offer(index+1);
+                    max = Math.max(max, index+1);
+                }
+            }
+        }
+        for(int i = min; i<=max; i++){
+            res.add(map.get(i));
+        }
+        return res;
+    }
+}
+
+315. Count Of Smaller Numbers After Self
+(1) binary search
+将给定数组从最后一个开始，用二分法插入到一个新的数组，这样新数组就是有序的，那么此时该数字在新数组中的坐标就是原数组中其右边所有较小数字的个数。类似于插入排序
+从后往前依靠right指针来确定右侧是否有比当前数字小的值，如果有的话right左移继续判断，right值正好记录了右侧的长度
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+public List<Integer> countSmaller(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        List<Integer> t = new ArrayList<>();
+        
+        for(int i = nums.length - 1; i>=0; i--){
+            int left = 0; int right = t.size();
+            while(left<right){
+                int mid = left+(right - left)/2;
+                if(t.get(mid) >= nums[i])
+                    right = mid;
+                else 
+                    left = mid+1;
+            }
+            res.add(0, right);
+            t.add(right, nums[i]);
+        }
+        
+        return res;
+    }
+
+(2) binary index tree
+https://leetcode.com/problems/count-of-smaller-numbers-after-self/discuss/76580/9ms-short-Java-BST-solution-get-answer-when-building-BST
+class Solution {
+    private int[] BIT;
+    public List<Integer> countSmaller(int[] nums) {
+        
+    // nums: [5, 2, 6, 1]
+        // copy: [1, 2, 5, 6]
+        // rank: [3, 2, 4, 1]
+        // BIT:  [0,
+        int[] copy = nums.clone();
+        Arrays.sort(copy);
+        int n = nums.length;
+        for (int i = 0; i < n; i++) {
+            nums[i] = Arrays.binarySearch(copy, nums[i]) + 1;
+        }
+        BIT = new int[n + 1];
+        List<Integer> res = new ArrayList<>();
+        for (int i = n - 1; i >= 0; i--) {
+            res.add(getSum(nums[i] - 1));
+            update(nums[i]);
+        }
+        Collections.reverse(res);
+        return res;
+    }
+
+    private int getSum(int idx) {
+        int sum = 0;
+        for (int i = idx; i >= 1; i -= i & (-i)) {
+            sum += BIT[i];
+        }
+        return sum;
+    }
+
+    private void update(int idx) {
+        for (int i = idx; i < BIT.length; i += i & (-i)) {
+            BIT[i]++;
+        }
+    }
+}
+
+316. Remove Duplicate Letters
+先建立一个哈希表来统计每个字母出现的次数，还需要一个visited数字来纪录每个字母是否被访问过，我们遍历整个字符串，对于遍历到的字符，先在哈希表中将其值减一，然后看visited中是否被访问过，若访问过则继续循环，说明该字母已经出现在结果中并且位置已经安排妥当。如果没访问过，我们和结果中最后一个字母比较，如果该字母的ASCII码小并且结果中的最后一个字母在哈希表中的值不为0(说明后面还会出现这个字母)，那么我们此时就要在结果中删去最后一个字母且将其标记为未访问，然后加上当前遍历到的字母，并且将其标记为已访问，以此类推直至遍历完整个字符串s，此时结果里的字符串即为所求。
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public String removeDuplicateLetters(String s) {
+        Stack<Character> stack = new Stack<>();
+        int[] count = new int[26];
+        char[] arr = s.toCharArray();
+        for(char c : arr) {
+            count[c-'a']++;
+        }
+        boolean[] visited = new boolean[26];
+        for(char c : arr) {
+            count[c-'a']--;
+            if(visited[c-'a']) {
+                continue;
+            }
+            while(!stack.isEmpty() && stack.peek() > c && count[stack.peek()-'a'] > 0) {
+                visited[stack.peek()-'a'] = false;
+                stack.pop();
+            }
+            stack.push(c);
+            visited[c-'a'] = true;
+        }
+        StringBuilder sb = new StringBuilder();
+        for(char c : stack) {
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+}
