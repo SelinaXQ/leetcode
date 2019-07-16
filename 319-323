@@ -1,0 +1,276 @@
+319. Bulb switcher
+这道题给了我们n个灯泡，第一次打开所有的灯泡，第二次每两个更改灯泡的状态，第三次每三个更改灯泡的状态，以此类推，第n次每n个更改灯泡的状态。让我们求n次后，所有亮的灯泡的个数。此题是CareerCup 6.6 Toggle Lockers 切换锁的状态。
+那么我们来看这道题吧，还是先枚举个小例子来分析下，比如只有5个灯泡的情况，'X'表示灭，‘√’表示亮，如下所示：
+初始状态：    X    X    X    X    X
+第一次：      √    √    √    √    √
+第二次：      √     X    √    X    √
+第三次：      √     X    X    X    √
+第四次：      √     X    X    √    √
+第五次：      √     X    X    √    X
+那么最后我们发现五次遍历后，只有1号和4号灯泡是亮的，而且很巧的是它们都是平方数，是巧合吗，还是其中有什么玄机。我们仔细想想，对于第n个灯泡，只有当次数是n的因子的之后，才能改变灯泡的状态，即n能被当前次数整除，比如当n为36时，它的因数有(1,36), (2,18), (3,12), (4,9), (6,6), 可以看到前四个括号里成对出现的因数各不相同，括号中前面的数改变了灯泡状态，后面的数又变回去了，等于灯泡的状态没有发生变化，只有最后那个(6,6)，在次数6的时候改变了一次状态，没有对应其它的状态能将其变回去了，所以灯泡就一直是点亮状态的。所以所有平方数都有这么一个相等的因数对，即所有平方数的灯泡都将会是点亮的状态。
+那么问题就简化为了求1到n之间完全平方数的个数，我们可以用force brute来比较从1开始的完全平方数和n的大小。
+* Time complexity: O(sqrt(n))
+* Space complexity: O(1)
+(1)
+public int bulbSwitch(int n) {
+        int res = 1;
+        while(res * res <= n)
+            res++;
+        return res - 1;//多加了一次1
+    }
+(2)
+public int bulbSwitch(int n) {
+        return (int) Math.sqrt(n);
+    }
+follow up:
+https://www.cnblogs.com/grandyang/p/5100098.html
+讨论：这道题有个follow up就是，如果我们toggle的顺序不是1，2，3，4...，而是1，3，5，7...，或者是2，4，6，8... 的话，还怎么做？博主没有想出像解法二那样简便的方法，只是大概想了想，如果各位大神有更好的方法，请一定要在下方留言啊。博主想的是，比如对于1，3，5，7...，那么就是先把所有的灯点亮，然后关掉3，6，9，12，15...等的灯，然后toggle的是5，10，15...等等，然后再toggle的是7，14，21...，我们发现，纯2的倍数的灯永远不会被改变，比如2，4，8，16... 这些灯状态不会变，有些灯只会变一次，比如3，6，9等，而有些灯会变两次，比如15（3x5），21（3x7），35（5x7）等，有些灯会变三次，比如105（3x5x7），那么我们可以观察出规律了，toggle的次数跟奇数因子的数字有关（注意这里的奇数因子不包括1），只要有奇数个奇因子，那么灯就是灭的，只要有偶数个奇因子，那么灯就是亮的。
+320. Generalized Abbreviation
+0000 word
+0001 wor1
+0010 wo1d
+0011 wo2
+0100 w1rd
+0101 w1r1
+0110 w2d
+0111 w3
+1000 1ord
+1001 1or1
+1010 1o1d
+1011 1o2
+1100 2rd
+1101 2r1
+1110 3d
+1111 4
+那么我们就可以观察出规律，凡是0的地方都是原来的字母，单独的1还是1，如果是若干个1连在一起的话，就要求出1的个数，用这个数字来替换对应的字母
+* Time complexity: O(n*n)
+* Space complexity: O(1 or n)
+(1) iteration
+class Solution {
+    public List<String> generateAbbreviations(String word) {
+        List<String> res = new ArrayList();
+        for(int i = 0; i<Math.pow(2, word.length()); i++){
+            String out = "";
+            int cnt = 0;
+            for(int j = 0; j<word.length(); j++){
+                if(((i>>j) & 1) == 1) 
+                    cnt++;
+                else{
+                    if(cnt!=0){
+                        out += String.valueOf(cnt);
+                        cnt = 0;
+                    }
+                    out += word.charAt(j);
+                }
+            }
+            if(cnt > 0){
+                out += String.valueOf(cnt);
+            }
+            res.add(out);
+        }
+        return res;
+    }
+}
+(2) recursion
+class Solution {
+    public List<String> generateAbbreviations(String word) {
+        List<String> res = new ArrayList();
+        helper(word, 0, 0, "", res);
+        return res;
+    }
+    private void helper(String word, int pos, int cnt, String out, List<String> res){
+        if(pos == word.length()){
+            if(cnt > 0)
+                out += String.valueOf(cnt);
+            res.add(out);
+        }else{
+            helper(word, pos+1, cnt+1, out, res);
+            helper(word, pos+1, 0, out+(cnt>0? String.valueOf(cnt):"")+ word.charAt(pos), res);
+        }
+    }
+}
+
+321. Create Maximum Number
+由于k的大小不定，所以有三种可能：
+第一种是当k为0时，两个数组中都不取数。
+第二种是当k不大于其中任意一个数组的长度时，这种情况下，有可能只从一个数组中取数，或者两个都取一些。
+第三种情况是k大于其中任意一个数组的长度，则需要从两个数组中分别取数，至于每个数组中取几个，每种情况都要考虑到，然后每次更结果即可。
+为了同时能处理这三种情况，我们假设从数组 nums1 中取i个数，那么就需要从 nums2 中取 k-i 个数。那么i的范围如何确定呢？我们从情况二中知道，假如k不大于任意一个数组的长度，那么有可能只从其中一个数组中取k个，就是说可以不从 nums1 中取数，所以 i 最小可以取到0。那么如果是第三种情况，假设k大于 nums2 的长度，就是说就算把 nums2 中所有的数字都取出来，都无法凑个k个，所以多余的 k-n2 个数字要从 nums1 中来取。所以我们只要比较 0 和 k-n2 的大小，取较大的为i的起始范围。那么i最大能到多大呢，还是要看 k 和 n1 的大小，如果 k 小于等于 n1，那么只需要取k个就行了，如果k大于 n1，那么只能在 nums1 中取 n1 个，多余的要到 nums2 中取。
+* Time complexity: O((m+n)^3)
+* Space complexity: O(n)
+class Solution {
+    public int[] maxNumber(int[] nums1, int[] nums2, int k) {
+        int n1 = nums1.length;
+        int n2 = nums2.length;
+        int[] res = new int[k];
+        // get i numbers from num1 and get k - i numbers from nums2
+        // if k <= n, min i = 0, else min i = k - n
+        for (int i = Math.max(0, k - n2); i <= Math.min(n1, k); i++) {
+            int[] temp = merge(maxArray(nums1, i), maxArray(nums2, k - i), k);
+            if (greater(temp, 0, res, 0)) {
+                res = temp;
+            }
+        }
+
+        return res;
+    }
+
+    public int[] maxArray(int[] nums, int k) {
+        int n = nums.length;
+        int[] res = new int[k];
+        for (int i = 0, j = 0; i < n; i++) {
+            // update the res if we find bigger number
+ //n-i>k-j的条件是保证当n == k时， 数组按顺序加入res
+            while (n - i > k - j && j > 0 && nums[i] > res[j - 1]) {
+                j--;
+            }
+            // add the biggest number for current position j in res
+            //总是保证前面的数字最大, 且降序排列
+            //数组中最后一个数字终会被加进去，除非降序排列的数组
+             //为了保证高位数字最大
+            //[9,1, 2, 5, 8, 3]
+            //挑出来的数字 k=3时， 是[9,8,3]
+            //[3,4,6,5] k = 2
+            //[6, 5]
+            if (j < k) {
+                res[j] = nums[i];
+                j++;
+            }
+        }
+        return res;
+    }
+
+    // merge the max array by order
+    public int[] merge(int[] nums1, int[] nums2, int k) {
+        int[] res = new int[k];
+        for (int i = 0, j = 0, r = 0; r < k; r++) {
+            res[r] = greater(nums1, i, nums2, j) ? nums1[i++] : nums2[j++];
+        }
+        return res;
+    }
+
+    public boolean greater(int[] nums1, int i, int[] nums2, int j) {
+        while (i < nums1.length && j < nums2.length && nums1[i] == nums2[j]) {
+            i++;
+            j++;
+        }
+        return j == nums2.length || (i < nums1.length && nums1[i] > nums2[j]);
+    }
+}
+322. Coin Change
+(1) bruto force 优化 100%
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+
+class S这其实是对暴力搜索的解法做了很好的优化，不仅不会TLE，而且击败率相当的高！对比Brute Force的方法，这里在递归函数中做了很好的优化。首先是判断start是否小于0，因为我们需要从coin中取硬币，不能越界。下面就是优化的核心了，看target是否能整除coins[start]，这是相当叼的一步，比如假如我们的目标值是15，如果我们当前取出了大小为5的硬币，我们做除法，可以立马知道只用大小为5的硬币就可以组成目标值target，那么我们用cur + target/coins[start] 来更新结果res。之后的for循环也相当叼，不像暴力搜索中的那样从start位置开始往前遍历coins中的硬币，而是遍历 target/coins[start] 的次数，由于不能整除，我们只需要对余数调用递归函数，而且我们要把次数每次减1，并且再次求余数。举个例子，比如coins=[1,2,3]，amount=11，那么 11除以3，得3余2，那么我们的i从3开始遍历，这里有一步非常有用的剪枝操作，没有这一步，还是会TLE，而加上了这一步，直接击败百分之九十九以上，可以说是天壤之别。那就是判断若 cur + i >= res - 1 成立，直接break，不调用递归。这里解释一下，cur + i 自不必说，是当前硬币个数cur 加上新加的i个硬币，我们都是知道cur+i如果大于等于res的话，那么res是不会被更新的，那么为啥这里是大于等于res-1呢？因为能运行到这一步，说明之前是无法整除的，那么余数一定存在，所以再次调用递归函数的target不为0，那么如果整除的话，cur至少会加上1，所以又跟res相等了，还是不会使得res变得更小。
+class Solution {
+    int res = Integer.MAX_VALUE;
+    public int coinChange(int[] coins, int amount) {
+        //int res = Integer.MAX_VALUE;
+        int n = coins.length;
+        Arrays.sort(coins);
+        helper(coins, n-1, amount, 0);
+        return (res == Integer.MAX_VALUE) ? -1 : res;
+    }
+    private void helper(int[] coins, int start, int target, int cur){
+        if(start < 0) return;
+        if(target % coins[start] == 0){
+            res = Math.min(res, cur + target / coins[start]);
+            return;
+        }
+        for(int i = target / coins[start]; i>=0; i--){
+            if(cur + i >= res - 1)break;
+            helper(coins, start-1, target - i * coins[start], cur + i);
+        }
+    }
+}
+(2) dynamic programming
+找极值一般都会用dynamic programming的方法
+我们维护一个一维动态数组dp，其中dp[i]表示钱数为i时的最小硬币数的找零，注意由于数组是从0开始的，所以我们要多申请一位，数组大小为amount+1，这样最终结果就可以保存在dp[amount]中了。初始化dp[0] = 0，因为目标值若为0时，就不需要硬币了。其他值可以初始化是amount+1，为啥呢，因为最小的硬币是1，所以amount最多需要amount个硬币，amount+1也就相当于当前的最大值了，注意这里不能用整型最大值来初始化，因为在后面的状态转移方程有加1的操作，有可能会溢出，除非你先减个1，接下来就是要找状态转移方程了，回归例子1，假设我取了一个值为5的硬币，那么由于目标值是11，所以是不是假如我们知道dp[6]，那么就知道了组成11的dp值了？所以我们更新dp[i]的方法就是遍历每个硬币，如果遍历到的硬币值小于i值（比如我们不能用值为5的硬币去更新dp[3]）时，我们用 dp[i - coins[j]] + 1 来更新dp[i]，
+所以状态转移方程为：
+dp[i] = min(dp[i], dp[i - coins[j]] + 1);
+其中coins[j]为第j个硬币，而i - coins[j]为钱数i减去其中一个硬币的值，剩余的钱数在dp数组中找到值，然后加1和当前dp数组中的值做比较，取较小的那个更新dp数组。
+class Solution {
+    public int coinChange(int[] coins, int amount) {
+        if(amount == 0)
+            return 0;
+        if(coins == null || coins.length == 0)
+            return -1;
+        int[] dp = new int[amount+1];
+        for(int i = 1; i<=amount; i++){
+            int min = Integer.MAX_VALUE;
+            for(int j = 0; j<coins.length; j++){
+                if(i>=coins[j] && dp[i - coins[j]] >= 0){
+                    min = Math.min(dp[i-coins[j]]+1, min);
+                }
+            }
+            dp[i] = min == Integer.MAX_VALUE ? -1 : min;
+        }
+        return dp[amount];
+    }
+}
+
+323. Number of Connected Components in an Undirected Graph
+(1) no graph union find
+这道题还有一种比较巧妙的方法，不用建立邻接链表，也不用bfs，思路是建立一个root数组，下标和节点值相同，此时root[i]表示节点i属于group i，我们初始化了n个部分 (res = n)，假设开始的时候每个节点都属于一个单独的区间，然后我们开始遍历所有的edge，对于一条边的两个点，他们起始时在root中的值不相同，这时候我们我们将结果减1，表示少了一个区间，然后更新其中一个节点的root值，使两个节点的root值相同，那么这样我们就能把连通区间的所有节点的root值都标记成相同的值，不同连通区间的root值不相同，这样也能找出连通区间的个数。
+* Time complexity: O(ve)
+* Space complexity: O(n)
+class Solution {
+    public int countComponents(int n, int[][] edges) {
+        int res = n;
+        int[] root = new int[n];
+        for(int i = 0; i<n; i++){
+            root[i] = i;
+        }
+        for(int[] edge : edges){
+            int x = find(root, edge[0]);
+            int y = find(root, edge[1]);
+            if(x != y){
+                res--;
+                root[y] = x;
+            }
+        }
+        return res;
+    }
+    private int find(int[] root, int i){
+        while(root[i]!=i)
+            i = root[i];
+        return i;
+    }
+}
+
+(2) bfs with graph
+要先构建邻接链表Adjacency List来做。这道题的一种解法是利用bfs来做，思路是给每个节点都有个flag标记其是否被访问过，对于一个未访问过的节点，我们将结果自增1，因为这肯定是一个新的连通区域，然后我们通过邻接链表来遍历与其相邻的节点，并将他们都标记成已访问过，遍历完所有的连通节点后我们继续寻找下一个未访问过的节点，以此类推直至所有的节点都被访问过了，那么此时我们也就求出来了连通区域的个数。
+class Solution {
+    public int countComponents(int n, int[][] edges) {
+        int res = 0;
+        boolean[] visited = new boolean[n];
+        
+        List<List<Integer>> adj = new ArrayList<>();
+        for(int i = 0; i<n; i++){
+            adj.add(new ArrayList());
+        }
+        for(int[] edge : edges){
+            adj.get(edge[0]).add(edge[1]);
+            adj.get(edge[1]).add(edge[0]);
+        }
+        Queue<Integer> queue = new LinkedList();
+        for(int i = 0; i<n; i++){
+            if(!visited[i]){
+                queue.offer(i);
+                res++;
+                while(!queue.isEmpty()){
+                    int curNode = queue.poll();
+                    visited[curNode] = true;
+                    List<Integer> children = adj.get(curNode);
+                    for(int child : children){
+                        if(!visited[child]){
+                            queue.offer(child);
+                        }
+                    }
+                }
+            }
+        }
+        return res;
+    }
+}
