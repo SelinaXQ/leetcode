@@ -1,0 +1,228 @@
+331. Verify Preorder Serialization of a Binary Tree
+ 1. 数字的个数总是比#号少一个
+2. 最后一个一定是#号
+那么我们加入先不考虑最后一个#号，那么此时数字和#号的个数应该相同，如果我们初始化一个为0的计数器，遇到数字，计数器加1，遇到#号，计数器减1，那么到最后计数器应该还是0。下面我们再来看两个返回False的例子，"#,7,6,9,#,#,#"和"7,2,#,2,#,#,#,6,#"，那么通过这两个反例我们可以看出，如果根节点为空的话，后面不能再有节点，而且不能有三个连续的#号出现。所以我们再加减计数器的时候，如果遇到#号，且此时计数器已经为0了，再减就成负数了，就直接返回False了，因为正确的序列里，任何一个位置i，在[0, i]范围内的#号数都不大于数字的个数的。当循环完成后，我们检测计数器是否为0的同时还要看看最后一个字符是不是#号。
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public boolean isValidSerialization(String preorder) {
+        String[] nodes = preorder.split(",");
+        int cnt = 0;
+        for(int i = 0; i<nodes.length - 1; i++){
+            if(nodes[i].equals("#")){
+                if(cnt == 0)
+                    return false;
+                cnt--;
+            }else{
+                cnt++;
+            }
+        }
+        return cnt == 0 && nodes[nodes.length - 1].equals("#");
+    }
+}
+332. Reconstruct Itinerary 行程
+* Time complexity: O(n)
+* Space complexity: O(n)
+(1) iteration dfs
+using priority queue and stack
+下面我们来看迭代的解法，需要借助栈来实现，来实现回溯功能。比如对下面这个例子：
+tickets = [["JFK", "KUL"], ["JFK", "NRT"], ["MRT", "JFK"]]
+那么建立的图如下：
+JFK -> KUL, NRT
+NRT -> JFK
+由于priority queue是按顺序存的，所有KUL会在NRT之前，那么我们起始从JFK开始遍历，先到KUL，但是KUL没有下家了，这时候图中的边并没有遍历完，此时我们需要将KUL存入栈中，然后继续往下遍历，最后再把栈里的节点存回结果即可
+class Solution {
+    public List<String> findItinerary(List<List<String>> tickets) {
+        Map<String, PriorityQueue<String>> map = new HashMap<>();
+        LinkedList<String> res = new LinkedList<>();
+        for(int i = 0; i<tickets.size(); i++){
+            String key = tickets.get(i).get(0);
+            if(!map.containsKey(key)){
+                map.put(key, new PriorityQueue<String>());
+            }
+            map.get(key).offer(tickets.get(i).get(1));
+        }
+        
+        Stack<String> stack = new Stack<>();
+        stack.push("JFK");
+        while(!stack.isEmpty()){
+            String cur = stack.peek();
+            if(map.containsKey(cur) && map.get(cur).size() > 0){
+                stack.push(map.get(cur).poll());
+            }else{
+                res.addFirst(stack.pop());
+            }
+        }
+        return res;
+    }
+}
+(2) recursion
+先来看递归的结果，我们首先把图建立起来，通过邻接链表来建立。由于题目要求解法按字母顺序小的，那么我们考虑用multiset，可以自动排序。等我们图建立好了以后，从节点JFK开始遍历，只要当前节点映射的PriorityQueue里有节点，我们取出这个节点，将其在multiset里删掉，然后继续递归遍历这个节点，由于题目中限定了一定会有解，那么等图中所有的PriorityQueue中都没有节点的时候，我们把当前节点存入结果中，然后再一层层回溯回去，将当前节点都存入结果.
+注意用linkedlist的addFirst()方法，因为递归是从最后一个地点开始加，每次都加在最开始的位置才能保证顺序
+class Solution {
+    public List<String> findItinerary(List<List<String>> tickets) {
+        Map<String, PriorityQueue<String>> map = new HashMap<>();
+        LinkedList<String> res = new LinkedList<>();
+        for(int i = 0; i<tickets.size(); i++){
+            String key = tickets.get(i).get(0);
+            if(!map.containsKey(key)){
+                map.put(key, new PriorityQueue<String>());
+            }
+            map.get(key).offer(tickets.get(i).get(1));
+        }
+        
+        dfs(map, "JFK", res);
+        return res;
+    }
+    private void dfs(Map<String, PriorityQueue<String>> map, String s, LinkedList<String> res){
+        while(map.containsKey(s) && map.get(s).size() > 0){
+            String temp = map.get(s).poll();
+            dfs(map, temp, res);
+        }
+        res.addFirst(s);
+    }
+}
+
+333. Largest BST Subtree
+(1) recursion
+keep checking if the tree is bst, if it is , return the count value.
+* Time complexity: O(nlogn)
+* Space complexity: O(n)
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public int largestBSTSubtree(TreeNode root) {
+        if(root == null)
+            return 0;
+        if(isValid(root, Integer.MIN_VALUE, Integer.MAX_VALUE)){
+            return count(root);
+        }
+        return Math.max(largestBSTSubtree(root.left), largestBSTSubtree(root.right));
+    }
+    private boolean isValid(TreeNode root, int min, int max){
+        if(root == null)
+            return true;
+        if(root.val <= min || root.val >= max)
+            return false;
+        return isValid(root.left, min, root.val) && isValid(root.right, root.val, max);
+    }
+    private int count(TreeNode root){
+        if(root == null)
+            return 0;
+        return count(root.left) + count(root.right) + 1;
+    }
+}
+
+(2) follow up
+* Time complexity: O(n)
+* Space complexity: O(n)
+我们的helper函数返回了一个一维数组，里面有三个数字，分别是以当前结点为根结点的数的最小值，最大值，以及最大的BST子树的结点个数。那么我们就可以在边验证BST的过程中边统计个数，首先判空，若空，则返回一个默认三元组，整型最大值，最小值，和0。那你可能有疑问，定义的不是说第一个值是最小值么？没错，我们后面再解释。若当前结点node存在，我们分别对其左右子结点调用递归函数，那么左子树和右子树的信息都保存到了left和right数组中，就算左右子结点不存在也没关系，由于第一句的判空，我们还是会得到一个默认的三元组。接下来就是根据左右子树的信息来更新结果res了，由于BST的定义，当前结点值肯定是大于左子树的最大值，小于右子树的最小值的。左子树的最大值保存在 left[1] 中，右子树的最小值保存在 right[0] 中，如果这两个条件满足了，说明左右子树都是BST，那么我们返回的三元组的最小值就是当前结点值和左子树最小值中的较小者，最大值就是当前结点值和右子树最大值中的较大值，返回的BST结点个数就是左右子树的结点个数加上1，即算上了当前结点。好，现在解释下为空时返回的三元组为何顺序是整型最大值，整型最小值。如果当前是叶结点，其也算是BST，那么我们肯定希望能进入if从句，从而使得三元组的第三项能加1，但是if的条件是当前结点值要大于左子树中的最大值，现在左子结点是空的，为了保证条件能通过，我们将空的左子树的最大值设置为整型最小值，这样一定能通过，同理，将空的右子树的最小值设置为整型最大值，这就是空结点的三元组的作用。好，继续看else中的内容，如果破坏了BST的规则，那么返回的三元组的最小值就是整型最小值，最大值是整型最大值，BST结点个数并不是0，因为其左右子树中有可能还有BST，所以是左右子树中的BST结点个数中的较大值。
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public int largestBSTSubtree(TreeNode root) {
+        int[] res = helper(root);
+        return res[2];
+    }
+    private int[] helper(TreeNode root){
+        if(root == null){
+            return new int[]{Integer.MAX_VALUE, Integer.MIN_VALUE, 0};
+        }
+        int[] left = helper(root.left);
+        int[] right = helper(root.right);
+        if(root.val > left[1] && root.val < right[0]){
+            return new int[]{Math.min(root.val, left[0]), 
+                   Math.max(root.val, right[1]),
+                   left[2] + right[2] + 1};
+        }else{
+            return new int[]{Integer.MIN_VALUE, Integer.MAX_VALUE, Math.max(left[2], right[2])};
+        }
+    }
+}
+
+334. Increasing Triplet Subsequence
+use two pointers.
+min keeps the smallest number,
+max keeps the number that is larger than min, every time there is a number that is larger than min and smaller than max, update max.
+so if there is a number that is larger than max, we found a sequence.
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public boolean increasingTriplet(int[] nums) {
+        if(nums.length < 3)
+            return false;
+        int min = Integer.MAX_VALUE;
+        int max = Integer.MAX_VALUE;
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] <= min){
+                min = nums[i];
+            }else if(nums[i] <= max){
+                max = nums[i];
+            }else {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+335. Self Crossing 找规律题
+实际上相交的情况只有以下三种情况：
+     x(1)
+    ┌───┐
+x(2)│   │x(0)
+    └───┼──>
+    x(3)│
+        
+第一类是第四条边和第一条边相交的情况，需要满足的条件是第一条边大于等于第三条边，第四条边大于等于第二条边。同样适用于第五条边和第二条边相交，第六条边和第三条边相交等等，依次向后类推的情况...
+ 
+      x(1)
+    ┌──────┐
+    │      │x(0)
+x(2)│      ^
+    │      │x(4)
+    └──────│
+      x(3)
+第二类是第五条边和第一条边重合相交的情况，需要满足的条件是第二条边和第四条边相等，第五条边大于等于第三条边和第一条边的差值，同样适用于第六条边和第二条边重合相交的情况等等依次向后类推...
+ 
+      x(1)
+    ┌──────┐
+    │      │x(0)
+x(2)│     <│────│
+    │       x(5)│x(4)
+    └───────────│
+        x(3)
+第三类是第六条边和第一条边相交的情况，需要满足的条件是第四条边大于等于第二条边，第三条边大于等于第五条边，第五条边大于等于第三条边和第一条边的差值，第六条边大于等于第四条边和第二条边的差值，同样适用于第七条边和第二条边相交的情况等等依次向后类推…
+* Time complexity: O(n)
+* Space complexity: O(1)
+public boolean isSelfCrossing(int[] x) {
+        if(x.length < 3)
+            return false;
+        for(int i = 3; i<x.length; i++){
+            if(x[i] >= x[i-2] && x[i-3] >= x[i-1]){
+                return true;
+            }
+            if(i >= 4 && x[i-1] == x[i-3] && x[i] >= x[i-2] - x[i-4]){
+                return true;
+            }
+            if(i >= 5 && x[i-2] >= x[i-4] && x[i-3] >= x[i-1] && x[i-1] >= x[i-3] - x[i-5] && x[i] >= x[i-2] - x[i-4]){
+                return true;
+            }
+        }
+        return false;
+    }
+
