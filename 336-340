@@ -1,0 +1,278 @@
+336. Palindrome Pairs
+要用到哈希表来建立每个单词和其位置的映射，然后需要一个set来保存出现过的单词的长度，算法的思想是，遍历单词集，对于遍历到的单词，我们对其翻转一下，然后在哈希表查找翻转后的字符串是否存在，注意不能和原字符串的坐标位置相同，因为有可能一个单词翻转后和原单词相等，现在我们只是处理了bat和tab的情况，还存在abcd和cba，dcb和abcd这些情况需要考虑，这就是我们为啥需要用set，由于set是自动排序的，我们可以找到当前单词长度在set中的iterator，然后从开头开始遍历set，遍历比当前单词小的长度，比如abcdd翻转后为ddcba，我们发现set中有长度为3的单词，然后我们dd是否为回文串，若是，再看cba是否存在于哈希表，若存在，则说明abcdd和cba是回文对，存入结果中，对于dcb和aabcd这类的情况也是同样处理，我们要在set里找的字符串要在遍历到的字符串的左边和右边分别尝试，看是否是回文对，这样遍历完单词集，就能得到所有的回文对。
+实际不需要用set, 在截取str2不仅要判断是否在map中还要看长度是否不为0，条件不同
+class Solution {
+    public List<List<Integer>> palindromePairs(String[] words) {
+        List<List<Integer>> res = new ArrayList<>();
+        if(words == null || words.length < 2){
+            return res;
+        }
+        Map<String, Integer> map = new HashMap<>();//string - index
+        for(int i = 0; i<words.length; i++){
+            map.put(words[i], i);
+        }
+        
+        for(int i = 0; i<words.length; i++){
+            for(int j = 0; j<=words[i].length(); j++){
+                String str1 = words[i].substring(0, j);
+                String str2 = words[i].substring(j);
+                if(isPalindrom(str1)){
+                    String str2reverse = new StringBuilder(str2).reverse().toString();
+                    if(map.containsKey(str2reverse) && map.get(str2reverse) != i){
+                        res.add(Arrays.asList(map.get(str2reverse), i));
+                    }
+                }
+                if(str2.length() != 0 && isPalindrom(str2)){
+                    String str1reverse = new StringBuilder(str1).reverse().toString();
+                    if(map.containsKey(str1reverse) && map.get(str1reverse) != i){
+                        res.add(Arrays.asList(i, map.get(str1reverse)));
+                    }
+                }
+            }
+        }
+        return res;
+    }
+    private boolean isPalindrom(String s){
+        int left = 0;
+        int right = s.length() - 1;
+        while(left <= right){
+            if(s.charAt(left++) != s.charAt(right--))
+                return false;
+        }
+        return true;
+    }
+}
+
+337. House Robber III
+(1) array dynamic programming
+这种方法的递归函数返回一个大小为2的一维数组res，其中res[0]表示不包含当前节点值的最大值，res[1]表示包含当前值的最大值，那么我们在遍历某个节点时，首先对其左右子节点调用递归函数，分别得到包含与不包含左子节点值的最大值，和包含于不包含右子节点值的最大值，那么当前节点的res[0]就是左子节点两种情况的较大值加上右子节点两种情况的较大值，res[1]就是不包含左子节点值的最大值加上不包含右子节点值的最大值，和当前节点值之和，返回即可。
+class Solution {
+    public int rob(TreeNode root) {
+        int[] res = dfs(root);
+        return Math.max(res[0], res[1]);
+    }
+    private int[] dfs(TreeNode root){
+        if(root == null)
+            return new int[]{0 , 0};
+        int[] left = dfs(root.left);
+        int[] right = dfs(root.right);
+        int[] res = new int[]{0, 0};
+        res[0] = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
+        res[1] = left[0] + right[0] + root.val;
+        return res;
+    }
+}
+
+(2) recursion very slow
+public int rob(TreeNode root) {
+        if(root == null)
+            return 0;
+        int val = 0;
+        if(root.left != null){
+            val += rob(root.left.left) + rob(root.left.right);
+        }
+        if(root.right != null){
+            val += rob(root.right.left) + rob(root.right.right);
+        }
+        return Math.max(val + root.val, rob(root.left) + rob(root.right));
+    }
+
+338. Counting Bits
+(1) find pattern
+我们写出0到 15 的数的二进制和1的个数如下：
+0    0000    0
+-------------
+1    0001    1
+-------------
+2    0010    1
+3    0011    2
+-------------
+4    0100    1
+5    0101    2
+6    0110    2
+7    0111    3
+-------------
+8    1000    1
+9    1001    2
+10   1010    2
+11   1011    3
+12   1100    2
+13   1101    3
+14   1110    3
+15   1111    4
+我最先看出的规律是这样的，除去前两个数字0个1，从2开始，2和3，是 [21, 22) 区间的，值为1和2。而4到7属于 [22, 23) 区间的，值为 1,2,2,3，前半部分1和2和上一区间相同，2和3是上面的基础上每个数字加1。再看8到 15，属于 [23, 24) 区间的，同样满足上述规律
+class Solution {
+    public int[] countBits(int num) {
+        if(num == 0)
+            return new int[]{0};
+        int[] res = new int[num + 1];
+        res[0] = 0; res[1] = 1;
+        int k = 2;
+        int i = 2;
+        int index = 2;
+        while(i <= num){
+            for(i = (int)Math.pow(2, k-1); i < (int)Math.pow(2, k); i++){
+                if(i > num)
+                    break;
+                int t = (int)(Math.pow(2, k) - Math.pow(2, k-1)) / 2;
+                if(i < Math.pow(2, k-1) + t){
+                    res[index] = res[i-t];
+                    index++;
+                }else{
+                    res[index] = res[i-t] + 1;
+                    index++;
+                }
+            }
+            k++;
+        }
+        
+        return res;
+    }
+}
+
+(2) bit manipulation
+巧妙的利用了 i&(i - 1)， 这个本来是用来判断一个数是否是2的指数的快捷方法，比如8，二进制位 1000, 那么 8&(8-1) 为0，只要为0就是2的指数, 那么我们现在来看一下0到 15 的数字和其对应的 i&(i - 1) 值：
+i    binary '1'  i&(i-1)
+0    0000    0
+-----------------------
+1    0001    1    0000
+-----------------------
+2    0010    1    0000
+3    0011    2    0010
+-----------------------
+4    0100    1    0000
+5    0101    2    0100
+6    0110    2    0100
+7    0111    3    0110
+-----------------------
+8    1000    1    0000
+9    1001    2    1000
+10   1010    2    1000
+11   1011    3    1010
+12   1100    2    1000
+13   1101    3    1100
+14   1110    3    1100
+15   1111    4    1110
+我们可以发现每个i值都是 i&(i-1) 对应的值加1。
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public int[] countBits(int num) {
+        if(num == 0)
+            return new int[]{0};
+        int[] res = new int[num + 1];
+        for(int i = 1; i<=num; i++){
+            res[i] = res[i & i-1] + 1;
+        }
+        
+        return res;
+    }
+}
+339. Nested List Weight Sum
+* Time complexity: O(n)
+* Space complexity: O(n)
+(1) recursion
+/**
+ * // This is the interface that allows for creating nested lists.
+ * // You should not implement it, or speculate about its implementation
+ * public interface NestedInteger {
+ *     // Constructor initializes an empty nested list.
+ *     public NestedInteger();
+ *
+ *     // Constructor initializes a single integer.
+ *     public NestedInteger(int value);
+ *
+ *     // @return true if this NestedInteger holds a single integer, rather than a nested list.
+ *     public boolean isInteger();
+ *
+ *     // @return the single integer that this NestedInteger holds, if it holds a single integer
+ *     // Return null if this NestedInteger holds a nested list
+ *     public Integer getInteger();
+ *
+ *     // Set this NestedInteger to hold a single integer.
+ *     public void setInteger(int value);
+ *
+ *     // Set this NestedInteger to hold a nested list and adds a nested integer to it.
+ *     public void add(NestedInteger ni);
+ *
+ *     // @return the nested list that this NestedInteger holds, if it holds a nested list
+ *     // Return null if this NestedInteger holds a single integer
+ *     public List<NestedInteger> getList();
+ * }
+ */
+class Solution {
+    public int depthSum(List<NestedInteger> nestedList) {
+        if(nestedList == null)
+            return 0;
+        return helper(nestedList, 1);
+    }
+    private int helper(List<NestedInteger> nestedList, int depth){
+        int res = 0;
+        for(NestedInteger nest : nestedList){
+            if(nest.isInteger()){
+                res += nest.getInteger() * depth;
+            }else{
+                res += helper(nest.getList(), depth+1);
+            }
+        }
+        return res;
+    }
+}
+
+(2) iteration
+class Solution {
+    public int depthSum(List<NestedInteger> nestedList) {
+        if(nestedList == null)
+            return 0;
+        int depth = 1;
+        int res = 0;
+        Queue<NestedInteger> queue = new LinkedList<>(nestedList);
+        System.out.println(queue.size());
+        while(!queue.isEmpty()){
+            int size = queue.size();
+            for(int i = 0; i<size; i++){
+                NestedInteger nest = queue.poll();
+                if(nest.isInteger()){
+                    res += nest.getInteger() * depth;
+                }else{//把list形式的加到queue末尾，此时不计算，depth++之后再计算
+                    queue.addAll(nest.getList());
+                }
+            }
+            depth++;
+        }
+        return res;
+    }
+}
+
+340. Longest Substring with At Most K Distinct Characters
+* Time complexity: O(n)
+* Space complexity: O(n)
+(1) hashmap
+利用hashmap 的key不能重复的性质， map中记录的是字母和其最大的index。map的size始终保持在k的大小， 每次加一个新的char,此时map的size是k+1, 删掉index最小的字母，并更新left位置。
+class Solution {
+    public int lengthOfLongestSubstringKDistinct(String s, int k) {
+        if(k == 0) return 0;
+        int n = s.length();
+        if(n < k)
+            return n;
+        int left = 0;
+        int right = 0;
+        //int res = 0;
+        HashMap<Character, Integer> map = new HashMap<>();
+        
+        int max = k;
+        while(right < n){
+            if(map.size() <= k){
+                map.put(s.charAt(right), right);//map的key不能重复，所以遇到重复的字母就不会加到map中，但是right index 在移动
+                right++;
+            }
+            if(map.size() == k+1){
+                int deleteIndex = Collections.min(map.values());
+                map.remove(s.charAt(deleteIndex));
+                left = deleteIndex+1 ;
+            }
+            max = Math.max(max, right - left);
+        }
+        return max;
+    }
+}
