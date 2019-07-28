@@ -1,0 +1,322 @@
+364. Nested List Weight Sum II
+(1) trick solution
+Use unweighted to sum current integer level value.
+add the value that are not integer to a temp list ’nextLevel’;
+after every loop, we set add unweighted value to weighted. So we don’t need to multiply level with value.
+We sum value as level times which is equal to multiply them.
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int depthSumInverse(List<NestedInteger> nestedList) {
+        int unweighted = 0;
+        int weighted = 0;
+        while(nestedList.size() != 0){
+            List<NestedInteger> nextLevel = new ArrayList<>();
+            for(NestedInteger nest : nestedList){
+                if(nest.isInteger()){
+                    unweighted += nest.getInteger();
+                }else{
+                    nextLevel.addAll(nest.getList());
+                }
+            }
+            weighted += unweighted;
+            nestedList = nextLevel;
+            
+        }
+        return weighted;
+    }
+}
+
+(2) array
+Record sum of level into a list. and every time depth++,
+so result is reverse order times depth.
+class Solution {
+    public int depthSumInverse(List<NestedInteger> nestedList) {
+        int depth = 0;
+        List<Integer> list = new ArrayList<>();
+        while(nestedList.size() != 0){
+            List<NestedInteger> nextLevel = new ArrayList<>();
+            int curr = 0;
+            for(NestedInteger nest : nestedList){
+                if(nest.isInteger()){
+                    curr += nest.getInteger();
+                }else{
+                    nextLevel.addAll(nest.getList());
+                }
+            }
+            depth++;
+            list.add(curr);
+            nestedList = nextLevel;
+            
+        }
+        int res = 0;
+        for(Integer l : list){
+            res += l * (depth--);
+        }
+        
+        return res;
+    }
+}
+
+365. Water and Jug Problem Greatest Common Divisor
+这道问题其实可以转换为有一个很大的容器，我们有两个杯子，容量分别为x和y，问我们通过用两个杯子往里倒水，和往出舀水，问能不能使容器中的水刚好为z升。那么我们可以用一个公式来表达：
+z = m * x + n * y
+其中m，n为舀水和倒水的次数，正数表示往里舀水，负数表示往外倒水，那么题目中的例子可以写成: 4 = (-2) * 3 + 2 * 5，即3升的水罐往外倒了两次水，5升水罐往里舀了两次水。那么问题就变成了对于任意给定的x,y,z，存不存在m和n使得上面的等式成立。根据裴蜀定理 Bézout's lemma，ax + by = d的解为 d = gcd(x, y)，那么我们只要只要z % d == 0，上面的等式就有解，所以问题就迎刃而解了，我们只要看z是不是x和y的最大公约数的倍数就行了，别忘了还有个限制条件x + y >= z，因为x和y不可能称出比它们之和还多的水
+* Time complexity: O(1)
+* Space complexity: O(n)
+class Solution {
+    public boolean canMeasureWater(int x, int y, int z) {
+        return z == 0 || (x+y >= z && z % gcd(x, y) == 0); 
+    }
+    private int gcd(int x , int y){
+        return y == 0 ? x : gcd(y, x % y); 
+    }
+}
+
+366. Find Leaves of Binary Tree
+recursion and set leaves as null
+* Time complexity: O(n)
+* Space complexity: O(n)
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public List<List<Integer>> findLeaves(TreeNode root) {
+        List<List<Integer>> res = new ArrayList<>();
+        while(root != null){
+            List<Integer> leaves = new ArrayList<>();
+            root = remove(root, leaves);
+            res.add(leaves);
+        }
+        return res;
+    }
+    private TreeNode remove(TreeNode root, List<Integer> leaves){
+        if(root == null){
+            return null;
+        }
+        if(root.left == null && root.right == null){
+            leaves.add(root.val);
+            return null;
+        }
+        root.left = remove(root.left, leaves);
+        root.right = remove(root.right, leaves);
+        return root;
+    }
+}
+
+367. Valid Perfect Square
+(1)
+Start from 1 to sqrt(num) by using num/i to see if  i*i is equal to num.
+* Time complexity: O(sqrt(n))
+* Space complexity: O(1)
+ public boolean isPerfectSquare(int num) {
+        for(int i = 1; i <= num/i; i++){
+            if(i*i == num)
+                return true;
+        }
+        return false;
+    }
+(2) binary search
+* Time complexity: O(logn)
+* Space complexity: O(1)
+public boolean isPerfectSquare(int num) {
+        long left = 0;
+        long right = num;
+        while(left <= right){
+            long mid = left + (right - left)/2;
+            long temp = mid * mid;
+            if(temp == num){
+                return true;
+            }
+            if(temp < num){
+                left = mid + 1;
+            }else{
+                right = mid - 1;
+            }
+        }
+        return false;
+    }
+(3) math
+1 = 1
+4 = 1 + 3
+9 = 1 + 3 + 5
+16 = 1 + 3 + 5 + 7
+25 = 1 + 3 + 5 + 7 + 9
+36 = 1 + 3 + 5 + 7 + 9 + 11
+....
+1+3+...+(2n-1) = (2n-1 + 1)n/2 = n*n
+* Time complexity: O(sqrt(n))
+* Space complexity: O(1)
+public boolean isPerfectSquare(int num) {
+        int i = 1;
+        while(num > 0){
+            num -= i;
+            i += 2;
+        }
+        return num == 0;
+    }
+
+368. Largest Divisible Set(distinct positive integers)
+dynamic programming
+dp[i]表示到数字nums[i]位置最大可整除的子集合的长度，还需要一个一维数组parent，来保存上一个能整除的数字的位置，两个整型变量mx和mx_idx分别表示最大子集合的长度和起始数字的位置.
+我们可以从后往前遍历数组，对于某个数字再遍历到末尾，在这个过程中，如果nums[j]能整除nums[i], 且dp[i] < dp[j] + 1的话，更新dp[i]和parent[i]，如果dp[i]大于mx了，还要更新mx和mx_idx，最后循环结束后，我们来填res数字，根据parent数组来找到每一个数字.
+* Time complexity: O(n^2logn)
+* Space complexity: O(n)
+class Solution {
+    public List<Integer> largestDivisibleSubset(int[] nums) {
+        Arrays.sort(nums);
+        int[] dp = new int[nums.length];
+        int[] parent = new int[nums.length];
+        List<Integer> res = new ArrayList<>();
+        int max = 0;
+        int maxIndex = 0;
+        for(int i = nums.length - 1; i>=0; i--){
+            for(int j = i; j < nums.length; j++){
+                if(nums[j] % nums[i] == 0 && dp[i] < dp[j] + 1){
+                    dp[i] = dp[j] + 1;
+                    parent[i] = j;
+                    if(max<dp[i]){
+                        max = dp[i];
+                        maxIndex = i;
+                    }
+                }
+            }
+        }
+        for(int i = 0; i < max; i++){
+            res.add(nums[maxIndex]);
+            maxIndex = parent[maxIndex];
+        }
+        return res;
+    }
+}
+
+369. Plus One Linked List
+(1)reverse twice
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public ListNode plusOne(ListNode head) {
+        ListNode h2 = reverse(head);
+        ListNode p = h2;
+        while(p != null){
+            if(p.val < 9){
+                p.val = p.val + 1;
+                break;
+            }else{
+                p.val = 0;
+                if(p.next == null){
+                    p.next = new ListNode(1);
+                    break;
+                }
+                p = p.next;
+            }
+        }
+        return reverse(h2);
+    }
+    private ListNode reverse(ListNode head){
+        if(head == null || head.next == null){
+            return head;
+        }
+        ListNode left = head;
+        ListNode right = left.next;{
+            while(right != null){
+                ListNode temp = right.next;
+                right.next = left;
+                left = right;
+                right = temp;
+            }
+        }
+        head.next = null;
+        return left;
+    }
+}
+
+(2) find the last non-9 number, set the number as number+1 and turn it’s later numbers into 0.
+* Time complexity: O(n)
+* Space complexity: O(1)
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    public ListNode plusOne(ListNode head) {
+        ListNode cur = head;
+        ListNode right = null;
+        while(cur != null){
+            if(cur.val != 9){
+                right = cur;
+            }
+            cur = cur.next;
+        }
+        if(right == null){
+            right = new ListNode(0);
+            right.next = head;
+            head = right;
+        }
+        right.val++;
+        cur = right.next;
+        while(cur != null){
+            cur.val = 0;
+            cur = cur.next;
+        }
+        return head;
+    }
+}
+
+370. Range Addition
+dynamic programming
+set up the summation array. 
+假设我们的数组范围是 [0, n)，需要更新的区间是 [start, end]，更新值是 inc，那么将区间 [start, end] 中每个数字加上 inc，等同于将区间 [start, n) 内的数字都加上 inc，然后将 [end+1, n) 区间内数字都减去 inc，明白了可以这样转换之后，我们还是不能每次都更新区间内所有的值，所以需要换一种标记方式，做法就是在开头坐标 start 位置加上 inc，而在结束位置 end 加1的地方加上 -inc。就比如说需要将新区间 [1, 3] 内数字都加2，那么我们在1的位置加2，在4的位置减2，于是数组就变成了 [0, 2, 0, 0, -2]。假如就只有这一个操作，如何得到最终的结果呢，答案是建立累加和数组，变成 [0, 2, 2, 2, 0]，我们发现正好等同于直接将区间 [1, 3] 内的数字都加2。进一步分析，建立累加和数组的操作实际上是表示当前的数字对之后的所有位置上的数字都有影响，那么我们在 start 位置上加了2，表示在 [start, n) 区间范围内每个数字都加了2，而实际上只有 [start, end] 区间内的数字才需要加2，为了消除这种影响，我们需要将 [end+1, n) 区间内的数字都减去2，所以才在 end+1 位置上减去了2，那么建立累加和数组的时候就相当于后面所有的数字都减去了2。需要注意的是这里 end 可能等于 n-1，则 end+1 可能会越界，所以我们初始化数组的长度为 n+1，就可以避免越界了。那么根据题目中的例子，我们可以得到一个数组，nums = {-2, 2, 3, 2, -2, -3}，然后对其做累加和就是我们要求的结果 result = {-2, 0, 3, 5, 3}
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int[] getModifiedArray(int length, int[][] updates) {
+        int[] nums = new int[length + 1];
+        int[] res = new int[length];
+        for(int i = 0; i<updates.length; i++){
+            nums[updates[i][0]] += updates[i][2];
+            nums[updates[i][1] + 1] -= updates[i][2];
+        }
+        int sum = 0;
+        int j = 0;
+        for(int i = 0; i<nums.length; i++){
+            if(j == length) break;
+            sum += nums[i];
+            res[j++] = sum;
+        }
+        return res;
+    }
+}
+
+371. Sum of Two Integers bit manipulation
+* Time complexity: O(logn)
+* Space complexity: O(1)
+class Solution {
+    public int getSum(int a, int b) {
+        if(a == 0){
+            return b;
+        }
+        if(b == 0){
+            return a;
+        }
+        while(b!=0){
+            int carry = a & b;
+            System.out.println(carry);
+            a = a ^ b;
+            System.out.println(a);
+            b = carry << 1;
+            System.out.println(b);
+        }
+        return a;
+    }
+}
