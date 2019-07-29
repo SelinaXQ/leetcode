@@ -1,0 +1,422 @@
+372. Super Pow
+* Time complexity: O(n)
+* Space complexity: O(n)
+和之前那道Pow(x, n)的解法很类似，我们都得对半缩小，不同的是后面都要加上对1337取余。由于给定的指数b是一个一维数组的表示方法，我们要是折半缩小处理起来肯定十分不方便，所以我们采用按位来处理，比如223 = (22)10 * 23, 所以我们可以从b的最高位开始，算出个结果存入res，然后到下一位是，res的十次方再乘以a的该位次方再对1337取余
+
+public int superPow(int a, int[] b) {
+        long res = 1;
+        for(int i = 0; i<b.length; i++){
+            res = pow((int)res, 10) * pow(a, b[i]) % 1337;
+        }
+        return (int)res;
+    }
+    private int pow(int x, int n){
+        if(n == 0) return 1;
+        if(n == 1) return x % 1337;
+        return pow(x % 1337 , n/2) * pow(x % 1337, n - n/2) % 1337;
+    }
+
+373. Find K Pairs with Smallest Sums
+priorityQueue
+* Time complexity: O(Math.min(n, k)^Math.min(m, k))
+* Space complexity: O(k)
+class Solution {
+    public List<List<Integer>> kSmallestPairs(int[] nums1, int[] nums2, int k) {
+        List<List<Integer>> res = new ArrayList<>();
+        if(nums1.length == 0 || nums2.length == 0 || k == 0)
+            return res;
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> (b[0]+b[1]) - (a[0]+a[1])); // 从大到小
+        for(int i = 0; i < Math.min(nums1.length, k); i++){
+            for(int j = 0; j < Math.min(nums2.length, k); j++){
+                if(pq.size() < k){
+                    pq.offer(new int[] {nums1[i], nums2[j]});
+                }else if(nums1[i]+nums2[j] < pq.peek()[0]+pq.peek()[1]){
+                    pq.poll();
+                    pq.offer(new int[] {nums1[i], nums2[j]});
+                }
+            }
+        }
+        while(!pq.isEmpty()){
+            int[] temp = pq.poll();
+            res.add(Arrays.asList(temp[0], temp[1]));
+        }
+        return res;
+    }
+}
+
+374. Guess Number Higher or Lower
+* Time complexity: O(logn)
+* Space complexity: O(1)
+/* The guess API is defined in the parent class GuessGame.
+   @param num, your guess
+   @return -1 if my number is lower, 1 if my number is higher, otherwise return 0
+      int guess(int num); */
+
+public class Solution extends GuessGame {
+    public int guessNumber(int n) {
+        int low = 1;
+        int high = n;
+        while(low <= high){
+            int mid = low + (high - low)/2;
+            if(guess(mid) == -1){
+                high = mid;
+            }else if(guess(mid) == 1){
+                low = mid+1; //(2, 2)的情况
+            }else if(guess(mid) == 0){
+                return mid;
+            }
+        }
+        return 0;
+    }
+}
+
+375. Guess Number Higher or Lower II
+Minimax
+根据题目中的提示，这道题需要用到Minimax极小化极大算法，关于这个算法可以参见这篇讲解，并且题目中还说明了要用DP来做，那么我们需要建立一个二维的dp数组，其中dp[i][j]表示从数字i到j之间猜中任意一个数字最少需要花费的钱数，那么我们需要遍历每一段区间[j, i]，维护一个全局最小值global_min变量，然后遍历该区间中的每一个数字，计算局部最大值local_max = k + max(dp[j][k - 1], dp[k + 1][i])，这个正好是将该区间在每一个位置都分为两段，然后取当前位置的花费加上左右两段中较大的花费之和为局部最大值，为啥要取两者之间的较大值呢，因为我们要cover所有的情况，就得取最坏的情况。然后更新全局最小值，最后在更新dp[j][i]的时候看j和i是否是相邻的，相邻的话赋为i，否则赋为global_min。这里为啥又要取较小值呢，因为dp数组是求的[j, i]范围中的最低cost，比如只有两个数字1和2，那么肯定是猜1的cost低。
+我们想，如果只有一个数字，那么我们不用猜，cost为0。如果有两个数字，比如1和2，我们猜1，即使不对，我们cost也比猜2要低。如果有三个数字1，2，3，那么我们就先猜2，根据对方的反馈，就可以确定正确的数字，所以我们的cost最低为2。如果有四个数字1，2，3，4，那么情况就有点复杂了，那么我们的策略是用k来遍历所有的数字，然后再根据k分成的左右两个区间，取其中的较大cost加上k。
+当k为1时，左区间为空，所以cost为0，而右区间2，3，4，根据之前的分析应该取3，所以整个cost就是1+3=4。
+当k为2时，左区间为1，cost为0，右区间为3，4，cost为3，整个cost就是2+3=5。
+当k为3时，左区间为1，2，cost为1，右区间为4，cost为0，整个cost就是3+1=4。
+当k为4时，左区间1，2，3，cost为2，右区间为空，cost为0，整个cost就是4+2=6。
+综上k的所有情况，此时我们应该取整体cost最小的，即4，为最后的答案，这就是极小化极大算法
+* Time complexity: O(n^3)
+* Space complexity: O(n^2)
+class Solution {
+    public int getMoneyAmount(int n) {
+        int[][] dp = new int[n+1][n+1];
+        for(int i = 2; i <= n; i++){
+            for(int j = i-1; j>0; j--){
+                int globalMin = Integer.MAX_VALUE;
+                for(int k = j+1; k<i; k++){
+                    int localMax = k+Math.max(dp[j][k-1], dp[k+1][i]);
+                    globalMin = Math.min(globalMin, localMax);
+                }
+                dp[j][i] = j+1 == i ? j : globalMin;
+            }
+        }
+        return dp[1][n];
+    }
+}
+
+376. Wiggle Subsequence
+(1) dynamic programming
+use positive array to record longest subsequence until i, positive[i]
+use negative array to record longest subsequence until i, negative[i]
+* Time complexity: O(n^2)
+* Space complexity: O(n)
+class Solution {
+    public int wiggleMaxLength(int[] nums) {
+        if(nums.length == 0 || nums == null){
+            return 0;
+        }
+        int[] positive = new int[nums.length];
+        int[] negative = new int[nums.length];
+        Arrays.fill(positive, 1);
+        Arrays.fill(negative, 1);
+        
+        for(int i = 1; i<nums.length; i++){
+            for(int j = 0; j<i; j++){
+                if(nums[i] > nums[j]){
+                    positive[i] = Math.max(positive[i], negative[j] + 1);
+                }else if(nums[i] < nums[j]){
+                    negative[i] = Math.max(negative[i], positive[j] + 1);
+                }
+            }
+        }
+        return Math.max(positive[nums.length-1], negative[nums.length-1]);
+    }
+}
+
+(2) greedy method done in O(n)
+Similar to dynamic programming, use two parameter positive and negative to record.
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public int wiggleMaxLength(int[] nums) {
+        int positive = 1;
+        int negative = 1;
+        int n = nums.length;
+        for(int i = 1; i<n; i++){
+            if(nums[i] > nums[i-1])
+                positive = negative + 1;
+            else if(nums[i] < nums[i-1]){
+                negative = positive + 1;
+            }
+        }
+        return Math.min(n, Math.max(positive, negative));
+    }
+}
+
+377.  Combination Sum IV dynamic programming
+Example:
+nums = [1, 2, 3]
+target = 4
+
+The possible combination ways are:
+(1, 1, 1, 1)
+(1, 1, 2)
+(1, 2, 1)
+(1, 3)
+(2, 1, 1)
+(2, 2)
+(3, 1)
+
+Note that different sequences are counted as different combinations.
+
+Therefore the output is 7.
+* Time complexity: O(target*n)
+* Space complexity: O(target)
+(1) 
+这道题的真正解法应该是用DP来做，解题思想有点像之前爬梯子的那道题Climbing Stairs，我们需要一个一维数组dp，其中dp[i]表示目标数为i的解的个数，然后我们从1遍历到target，对于每一个数i，遍历nums数组，如果i>=x, dp[i] += dp[i - x]。这个也很好理解，比如说对于[1,2,3] 4，这个例子，当我们在计算dp[3]的时候，3可以拆分为1+x，而x即为dp[2]，3也可以拆分为2+x，此时x为dp[1]，3同样可以拆为3+x，此时x为dp[0]，我们把所有的情况加起来就是组成3的所有情况了.
+public int combinationSum4(int[] nums, int target) {
+        int[] dp = new int[target+1];
+        dp[0] = 1;
+        for(int i = 1; i<= target; i++){
+            for(int num: nums){
+                if(i >= num){
+                    dp[i] += dp[i-num];
+                }
+            }
+        }
+        return dp[target];
+    }
+
+(2) optimize it with sorting if target is much larger than nums’ length
+public int combinationSum4(int[] nums, int target) {
+        int[] dp = new int[target+1];
+        dp[0] = 1;
+        Arrays.sort(nums);
+        for(int i = 1; i<= target; i++){
+            for(int num: nums){
+                if(i < num) break;
+                dp[i] += dp[i-num];
+            }
+        }
+        return dp[target];
+    }
+
+378. Kth smallest element in a sorted array
+(1) priorityQueue
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int kthSmallest(int[][] matrix, int k) {
+        PriorityQueue<Integer> queue = new PriorityQueue<>((a, b) -> b-a);
+        for(int i = 0 ; i<matrix.length; i++){
+            for(int j = 0; j<matrix[0].length; j++){
+                queue.offer(matrix[i][j]);
+                if(queue.size() > k){
+                    queue.poll();
+                }
+            }
+        }
+        return queue.peek();
+    }
+}
+
+(2) binary search
+由于是有序矩阵，那么左上角的数字一定是最小的，而右下角的数字一定是最大的，所以这个是我们搜索的范围，然后我们算出中间数字mid，由于矩阵中不同行之间的元素并不是严格有序的，所以我们要在每一行都查找一下 mid，我们并不用对每一行都做二分搜索法，我们注意到每列也是有序的，我们可以利用这个性质，从数组的左下角开始查找，如果比目标值小，我们就向右移一位，而且我们知道当前列的当前位置的上面所有的数字都小于目标值，那么 cnt += i+1，反之则向上移一位，这样我们也能算出 cnt 的值。 我们遍历完所有的行可以找出中间数是第几小的数，然后k比较，进行二分查找，left 和 right 最终会相等，并且会变成数组中第k小的数字。
+example:
+[1 2
+
+12 100]
+
+k = 3
+
+那么刚开始 left = 1, right = 100, mid = 50, 遍历完 cnt = 3，此时 right 更新为 50
+
+此时 left = 1, right = 50, mid = 25, 遍历完之后 cnt = 3, 此时 right 更新为 25
+
+此时 left = 1, right = 25, mid = 13, 遍历完之后 cnt = 3, 此时 right 更新为 13
+
+此时 left = 1, right = 13, mid = 7, 遍历完之后 cnt = 2, 此时 left 更新为8
+
+此时 left = 8, right = 13, mid = 10, 遍历完之后 cnt = 2, 此时 left 更新为 11
+
+此时 left = 11, right = 12, mid = 11, 遍历完之后 cnt = 2, 此时 left 更新为 12
+
+循环结束，left 和 right 均为 12，任意返回一个即可。
+
+* Time complexity: O(nlogX) (X: Max number - min number)
+* Space complexity: O(1)
+class Solution {
+    public int kthSmallest(int[][] matrix, int k) {
+        int left = matrix[0][0];
+        int right = matrix[matrix.length-1][matrix[0].length-1];
+        while(left < right){
+            int mid = left + (right - left) / 2;
+            int cnt = searchLessEqual(matrix, mid);
+            if(cnt < k) left = mid+1;
+            else right = mid;
+        }
+        return left;
+    }
+    private int searchLessEqual(int[][] matrix, int target){
+        int n = matrix.length;
+        int i = n-1;
+        int j = 0;
+        int res = 0;
+        while(i>=0 && j<n){
+            if(matrix[i][j] <= target){
+                res += i+1;
+                j++;
+            }else{
+                i--;
+            }
+        }
+        return res;
+    }
+}
+
+379. Design Phone Directory design
+(1) array
+class PhoneDirectory {
+
+    int[] nums;
+    
+    /** Initialize your data structure here
+        @param maxNumbers - The maximum numbers that can be stored in the phone directory. */
+    public PhoneDirectory(int maxNumbers) {
+        nums = new int[maxNumbers];
+        Arrays.fill(nums, 1);
+    }
+    
+    /** Provide a number which is not assigned to anyone.
+        @return - Return an available number. Return -1 if none is available. */
+    public int get() {
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] == 1){
+                nums[i] = 0;
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    /** Check if a number is available or not. */
+    public boolean check(int number) {
+        if(nums[number] == 1){
+            return true;
+        }
+        return false;
+    }
+    
+    /** Recycle or release a number. */
+    public void release(int number) {
+        if(nums[number] == 0){
+            nums[number] = 1;
+        }
+    }
+}
+
+/**
+ * Your PhoneDirectory object will be instantiated and called as such:
+ * PhoneDirectory obj = new PhoneDirectory(maxNumbers);
+ * int param_1 = obj.get();
+ * boolean param_2 = obj.check(number);
+ * obj.release(number);
+ */
+
+(2) Queue + set
+Queue is to get（poll()）, and set is to store used number.
+class PhoneDirectory {
+
+    private Queue<Integer> queue;
+    private Set<Integer> used;
+    private int maxNumber;
+    
+    /** Initialize your data structure here
+        @param maxNumbers - The maximum numbers that can be stored in the phone directory. */
+    public PhoneDirectory(int maxNumbers) {
+        queue = new LinkedList<>();
+        used = new HashSet<>();
+        maxNumber = maxNumbers;
+        for(int i = 0; i<maxNumber; i++){
+            queue.offer(i);
+        }
+    }
+    
+    /** Provide a number which is not assigned to anyone.
+        @return - Return an available number. Return -1 if none is available. */
+    public int get() {
+        Integer curr = queue.poll();
+        if(curr == null) return -1;
+        used.add(curr);
+        return curr;
+    }
+    
+    /** Check if a number is available or not. */
+    public boolean check(int number) {
+        return !used.contains(number);
+    }
+    
+    /** Recycle or release a number. */
+    public void release(int number) {
+        if(used.remove(number)){
+            queue.offer(number);
+        }
+    }
+}
+
+/**
+ * Your PhoneDirectory object will be instantiated and called as such:
+ * PhoneDirectory obj = new PhoneDirectory(maxNumbers);
+ * int param_1 = obj.get();
+ * boolean param_2 = obj.check(number);
+ * obj.release(number);
+ */
+
+380. Insert Delete GetRandom O(1) design
+Use map to store value and index in list.
+list to store value,
+every time we remove a value, it’s actually replace the value with the value at last index of the list.
+class RandomizedSet {
+
+    private Map<Integer, Integer> map;
+    private List<Integer> list;
+    private Random rand;
+    
+    /** Initialize your data structure here. */
+    public RandomizedSet() {
+        map = new HashMap<>();
+        list = new ArrayList<>();
+        rand = new Random();
+    }
+    
+    /** Inserts a value to the set. Returns true if the set did not already contain the specified element. */
+    public boolean insert(int val) {
+        if(map.containsKey(val)){
+            return false;
+        }
+        map.put(val, list.size());
+        list.add(val);
+        return true;
+    }
+    
+    /** Removes a value from the set. Returns true if the set contained the specified element. */
+    public boolean remove(int val) {
+        if(!map.containsKey(val)){
+            return false;
+        }
+        int curIndex = map.remove(val);
+        int lastVal = list.remove(list.size()-1);
+        if(curIndex != list.size()){
+            list.set(curIndex, lastVal);
+            map.put(lastVal, curIndex);
+        }
+        return true;
+    }
+    
+    /** Get a random element from the set. */
+    public int getRandom() {
+        return list.get(rand.nextInt(list.size()));
+    }
+}
+
+/**
+ * Your RandomizedSet object will be instantiated and called as such:
+ * RandomizedSet obj = new RandomizedSet();
+ * boolean param_1 = obj.insert(val);
+ * boolean param_2 = obj.remove(val);
+ * int param_3 = obj.getRandom();
+ */
