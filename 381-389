@@ -1,0 +1,381 @@
+381.  Insert Delete GetRandom O(1) - Duplicates allowed design
+TreeSet is sorted in ascending order search, add, remove are in O(logn) time
+Use hashmap to store number and it’s index set.
+class RandomizedCollection {
+
+    private Map<Integer, Set<Integer>> map;
+    private List<Integer> list;
+    private Random rand;
+    /** Initialize your data structure here. */
+    public RandomizedCollection() {
+        map = new HashMap<>();
+        list = new ArrayList<>();
+        rand = new Random();
+    }
+    
+    /** Inserts a value to the collection. Returns true if the collection did not already contain the specified element. */
+    public boolean insert(int val) {
+        Set<Integer> set = map.get(val);
+        if(set == null){
+            set = new HashSet<>();
+            map.put(val, set);
+        }
+        map.get(val).add(list.size());
+        list.add(val);
+        return set.size() == 1;
+    }
+    
+    /** Removes a value from the collection. Returns true if the collection contained the specified element. */
+    public boolean remove(int val) {
+        // Set set = new HashSet<>();
+        // set = map.get(val);
+        if(!map.containsKey(val)){
+            return false;
+        }
+        int idx = map.get(val).iterator().next();
+        map.get(val).remove(idx);
+        if(map.get(val).size() == 0){
+            map.remove(val);
+        }
+        int tail = list.remove(list.size()-1);
+        //Set<Integer> tailSet = map.get(tail);
+        if(idx != list.size()){
+            list.set(idx, tail);
+            map.get(tail).remove(list.size());
+            map.get(tail).add(idx);
+            
+        }
+        return true;
+    }
+    
+    /** Get a random element from the collection. */
+    public int getRandom() {
+        return list.get(rand.nextInt(list.size()));
+    }
+}
+
+/**
+ * Your RandomizedCollection object will be instantiated and called as such:
+ * RandomizedCollection obj = new RandomizedCollection();
+ * boolean param_1 = obj.insert(val);
+ * boolean param_2 = obj.remove(val);
+ * int param_3 = obj.getRandom();
+ */
+
+382. LinkedList Random Node design
+(1) compute length and then get a random number 
+/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+
+    private int len;
+    private ListNode head;
+    private Random rand;
+    /** @param head The linked list's head.
+        Note that the head is guaranteed to be not null, so it contains at least one node. */
+    public Solution(ListNode head) {
+        rand = new Random();
+        len = 0;
+        ListNode cur = head;
+        this.head = head;
+        while(cur!=null){
+            len++;
+            cur = cur.next;
+        }
+    }
+    
+    /** Returns a random node's value. */
+    public int getRandom() {
+        int temp = rand.nextInt(len);
+        ListNode cur = head;
+        while(temp != 0){
+            temp--;
+            cur = cur.next;
+        }
+        return cur.val;
+    }
+}
+
+/**
+ * Your Solution object will be instantiated and called as such:
+ * Solution obj = new Solution(head);
+ * int param_1 = obj.getRandom();
+ */
+(2) follow up : don’t know the length
+ Random Sampling with a Reservoir
+我们没法提前知道长度，这里用到了著名了 水塘抽样Reservoir Sampling 的思路，由于限定了 head 一定存在，所以我们先让返回值 res 等于 head 的节点值，然后让 cur 指向 head 的下一个节点，定义一个变量i，初始化为2，若 cur 不为空我们开始循环，我们在 [0, i - 1] 中取一个随机数，如果取出来0，那么我们更新 res 为当前的 cur 的节点值，然后此时i自增一，cur 指向其下一个位置，这里其实相当于我们维护了一个大小为1的水塘，然后我们随机数生成为0的话，我们交换水塘中的值和当前遍历到的值，这样可以保证每个数字的概率相等
+class Solution {
+
+    private ListNode head;
+    private Random rand;
+    /** @param head The linked list's head.
+        Note that the head is guaranteed to be not null, so it contains at least one node. */
+    public Solution(ListNode head) {
+        this.head = head;
+        rand = new Random();
+    }
+    
+    /** Returns a random node's value. */
+    public int getRandom() {
+        int res = head.val;
+        int i = 2;
+        ListNode cur = head.next;
+        while(cur != null){
+            int j = rand.nextInt(i);
+            if(j == 0) 
+                res = cur.val;
+            i++;
+            cur = cur.next;
+        }
+        return res;
+    }
+}
+
+383. Ransom Note
+hashmap
+* Time complexity: O(n)
+* Space complexity: O(n)
+public boolean canConstruct(String ransomNote, String magazine) {
+        HashMap<Character, Integer> map = new HashMap<>();
+        for(char c : magazine.toCharArray()){
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        }
+        for(char c : ransomNote.toCharArray()){
+            if(!map.containsKey(c)){
+                return false;
+            }else{
+                map.put(c, map.get(c) - 1);
+                if(map.get(c) == 0)
+                    map.remove(c);
+            }
+        }
+        return true;
+    }
+
+384. Shuffle an Array design
+和382类似
+class Solution {
+
+    private int[] nums;
+    private Random rand;
+    
+    public Solution(int[] nums) {
+        this.nums = nums;
+        rand = new Random();
+    }
+    
+    /** Resets the array to its original configuration and return it. */
+    public int[] reset() {
+        return nums;
+    }
+    
+    /** Returns a random shuffling of the array. */
+    public int[] shuffle() {
+        if(nums == null){
+            return null;
+        }
+        int[] clone = nums.clone();
+        // for(int i = 1; i<clone.length; i++){ //和i前面的交换
+        //     int temp = rand.nextInt(i+1);
+        //     swap(clone, i, temp);
+        // }
+        for(int i = 0; i<clone.length; i++){ //和i后面的交换
+            int temp = i + rand.nextInt(clone.length - i);
+            swap(clone, i, temp);
+        }
+        return clone;
+    }
+    
+    private void swap(int[] nums, int i, int j){
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+}
+
+/**
+ * Your Solution object will be instantiated and called as such:
+ * Solution obj = new Solution(nums);
+ * int[] param_1 = obj.reset();
+ * int[] param_2 = obj.shuffle();
+ */
+
+385. Mini Parser
+* Time complexity: O(n)
+* Space complexity: O(n)
+(1) iteration
+Use stack to store , every time encounter a ‘[‘, we add a new NestedInteger into it. 
+Every time encounter a ‘,’ or ‘]’, we add the integer into stack.peek(), and if it is a’]’, we pop out
+the first and add it to peek(). Keep the size of stack as 1 always.
+Also we need a start pointer to substring.
+class Solution {
+    public NestedInteger deserialize(String s) {
+        if(s == null){
+            return new NestedInteger();
+        }
+        if(s.charAt(0) != '['){
+            return new NestedInteger(Integer.valueOf(s));
+        }
+        Stack<NestedInteger> stack = new Stack<>();
+        int start = 1;
+        for(int i = 0; i<s.length(); i++){
+            char c = s.charAt(i);
+            if(c == '[‘){ 
+                stack.push(new NestedInteger());
+                start = i+1;
+            }else if(c == ',' || c == ']'){
+                if(i > start){
+                    Integer val = Integer.valueOf(s.substring(start, i));
+                    stack.peek().add(new NestedInteger(val));
+                }
+                start = i+1;
+                if(c == ']'){//keep stack size as 1
+                    if(stack.size() > 1){
+                        NestedInteger nest = stack.pop();
+                        stack.peek().add(nest);
+                    }
+                }
+            }
+        }
+        return stack.peek();
+    }
+}
+(2) recursion
+class Solution {
+    public NestedInteger deserialize(String s) {
+        if(s == null){
+            return new NestedInteger();
+        }
+        if(s.charAt(0) != '['){
+            return new NestedInteger(Integer.valueOf(s));
+        }
+        if(s.length() <= 2){
+            return new NestedInteger();
+        }
+        
+        NestedInteger res = new NestedInteger();
+        int start = 1;
+        int cnt = 0;
+        for(int i = 1; i<s.length(); i++){
+            char c = s.charAt(i);
+            if(cnt == 0 && (c == ',' || i == s.length()-1)){
+                res.add(deserialize(s.substring(start, i-start)));
+                start = i+1;
+            }else if(c == '['){
+                cnt++;
+            }else if(c == ']'){
+                cnt--;
+            }
+        }
+        return res;
+        
+    }
+}
+
+386. Lexicographical Numbers
+按个位数遍历，在遍历下一个个位数之前，先遍历十位数，十位数的高位为之前的个位数，只要这个多位数并没有超过n，就可以一直往后遍历，如果超过了，我们除以10，然后再加1，如果加1后末尾形成了很多0，那么我们要用个while循环把0都去掉，然后继续运算。
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public List<Integer> lexicalOrder(int n) {
+        List<Integer> res = new ArrayList<>();
+        int cur = 1;
+        for(int i = 0; i<n; i++){
+            res.add(cur);
+            if(cur * 10 <= n){
+                cur *= 10;
+            }else{
+                if(cur >= n){
+                    cur /= 10;
+                }
+                cur += 1;
+                while(cur % 10 == 0){ // 20, 30, 40
+                    cur /= 10;
+                }
+            }
+        }
+        return res;
+    }
+}
+
+387. First Unique Character in a String
+Use hashmap to count
+Then traverse from first character and find the char’s value is 1
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int firstUniqChar(String s) {
+        if(s.length() == 0 || s == null){
+            return -1;
+        }
+        HashMap<Character, Integer> map = new HashMap<>();
+        for(char c : s.toCharArray()){
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        }
+        for(int i = 0; i<s.length(); i++){
+            if(map.get(s.charAt(i)) == 1){
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
+388. Longest Absolute File Length
+回车符 \n 把每段分割开了，然后对于每一行，我们找最后一个空格符 \t 的位置，然后可以得到文件或文件夹的名字，然后我们判断其是文件还是文件夹，如果是文件就更新 res，如果是文件夹就更新 HashMap 的映射
+* Time complexity: O(n)
+* Space complexity: O(n)
+public int lengthLongestPath(String input) {
+        int res = 0;
+        Map<Integer, Integer> map = new HashMap<>();
+        map.put(0, 0);
+        for(String s : input.split("\n")){
+            int level = s.lastIndexOf("\t") + 1;
+            System.out.println(level);
+            int len = s.substring(level).length();
+            if(s.contains(".")){
+                res = Math.max(res, map.get(level) + len);
+            }else{
+                map.put(level+1, map.get(level) + len + 1);
+            }
+        }
+        return res;
+    }
+
+389. Find the Difference
+(1) hashmap
+public char findTheDifference(String s, String t) {
+        HashMap<Character, Integer> map = new HashMap<>();
+        for(char c : s.toCharArray()){
+            map.put(c, map.getOrDefault(c, 0) + 1);
+        }
+        for(char c : t.toCharArray()){
+            if(!map.containsKey(c)){
+                return c;
+            }else{
+                map.put(c, map.get(c) - 1);
+                if(map.get(c) == 0){
+                    map.remove(c);
+                }
+            }
+        }
+        return ' ';
+    }
+(2) bit manipulation
+public char findTheDifference(String s, String t) {
+        char res = 0;
+        for(char c : s.toCharArray()){
+            res ^= c;
+        }
+        for(char c : t.toCharArray()){
+            res ^= c;
+        }
+        return res;
+    }
+
