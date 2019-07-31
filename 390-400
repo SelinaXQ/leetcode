@@ -1,0 +1,415 @@
+390. Elimination Game
+(1) mirror image 镜像
+第一次从左往右删除的时候，奇数都被删掉了，剩下的都是偶数。如果我们对所有数都除以2，那么得到一个1到n/2的新数列。下一次我们从右往左删出，那么返回的结果应该是调用递归的结果lastRemaining(n / 2)在数组1到n/2之间的镜像。何为镜像，比如1, 2, 3, 4这个数字，2的镜像就是3, 1的镜像是4。
+public int lastRemaining(int n) {
+        return n == 1 ? 1 : 2 * (1+n/2 - lastRemaining(n/2));
+    }
+
+(2) 
+n = 8
+
+1 2 3 4 5 6 7 8
+
+   2    4    6   8
+
+   2          6
+
+               6
+
+n = 7      
+
+1 2 3 4 5 6 7
+
+   2    4    6
+         4
+如果我们仔细观察，我们可以发现从左往右删的时候，每次都是删掉第一个数字，而从右往左删的时候，则有可能删掉第一个或者第二个数字，而且每删一次，数字之间的距离会变为之前的两倍。我们要做的是每次记录当前数组的第一个数字，而且我们再通过观察可以看出，从右往左删时，如果剩下的数字个数是偶数个时，删掉的是第二个数字；如果是奇数个的时候，删掉的是第一个数字。总结出了上述规律
+public int lastRemaining(int n) {
+        int base = 1, res = 1;
+        while (base * 2 <= n) {
+            res += base;
+            base *= 2;
+            if (base * 2 > n) break;
+            if ((n / base) % 2 == 1) res += base;
+            base *= 2;
+        }
+        return res;
+    }
+
+391. Perfect Rectangle hard
+Use hashset to store every rectangles four corner, if contains remove it else add it.
+At last we will remove all the corners inside the final rectangle except four corners’ point if it is perfect.
+And we also need to check the area 
+check area in order to avoid two same overlap area: [[0,0,3,3],[1,1,2,2],[1,1,2,2]]
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public boolean isRectangleCover(int[][] rectangles) {
+        Set<String> set = new HashSet<>();
+        int area = 0;
+        int min_x = Integer.MAX_VALUE;
+        int min_y = Integer.MAX_VALUE;
+        int max_x = Integer.MIN_VALUE;
+        int max_y = Integer.MIN_VALUE;
+        
+        for(int[] rect : rectangles){
+            min_x = Math.min(min_x, rect[0]);
+            min_y = Math.min(min_y, rect[1]);
+            max_x = Math.max(max_x, rect[2]);
+            max_y = Math.max(max_y, rect[3]);
+            
+            area += (rect[2] - rect[0]) * (rect[3] - rect[1]);
+            
+            String s1 = rect[0] + "_" + rect[1];
+            String s2 = rect[0] + "_" + rect[3];
+            String s3 = rect[2] + "_" + rect[1];
+            String s4 = rect[2] + "_" + rect[3];
+            
+            if(set.contains(s1))
+                set.remove(s1);
+            else set.add(s1);
+            
+            if(set.contains(s2))
+                set.remove(s2);
+            else set.add(s2);
+            
+            if(set.contains(s3))
+                set.remove(s3);
+            else set.add(s3);
+            
+            if(set.contains(s4))
+                set.remove(s4);
+            else set.add(s4);
+        }
+        
+        String t1 = min_x + "_" + min_y;
+        String t2 = min_x + "_" + max_y;
+        String t3 = max_x + "_" + min_y;
+        String t4 = max_x + "_" + max_y;
+        
+        if(!set.contains(t1) || !set.contains(t2) || !set.contains(t3) || !set.contains(t4) || set.size() != 4){
+            return false;
+        }
+        return area == (max_x - min_x) * (max_y - min_y);
+    }
+}
+
+392. Is Subsequence
+* Time complexity: O(n)
+* Space complexity: O(1)
+two pointers
+public boolean isSubsequence(String s, String t) {
+        int i = 0;
+        for(int j = 0; j<t.length() && i<s.length(); j++){
+            if(s.charAt(i) == t.charAt(j)){
+                i++;
+            }
+        }
+        return i == s.length();
+    }
+follow up: lots of s.
+we can form a hashmap for t, key is character and value is a list storing index.
+also need a parameter pre to record former found index
+
+393. UTF-8 Validation
+Char. number range  |        UTF-8 octet sequence
+      (hexadecimal)    |              (binary)
+   --------------------+---------------------------------------------
+   0000 0000-0000 007F | 0xxxxxxx
+   0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+这种方法也是要记连续1的个数，如果是标识字节，先将其向右平移五位，如果得到110，则说明后面跟了一个字节，否则向右平移四位，如果得到1110，则说明后面跟了两个字节，否则向右平移三位，如果得到11110，则说明后面跟了三个字节，否则向右平移七位，如果为1的话，说明是10000000这种情况，不能当标识字节，直接返回false。在非标识字节中，向右平移六位，如果得到的不是10，则说明不是以10开头的，直接返回false，否则cnt自减1，成功完成遍历返回true。
+https://www.cnblogs.com/grandyang/p/5847597.html
+* Time complexity: O(n)
+* Space complexity: O(1)
+public boolean validUtf8(int[] data) {
+        int cnt = 0;
+        for(int d : data){
+            if(cnt == 0){
+                if((d>>5) == 0b110) cnt = 1;
+                else if((d>>4) == 0b1110) cnt = 2;
+                else if((d>>3) == 0b11110) cnt = 3;
+                else if((d >> 7) == 1) return false;
+            }else{
+                if((d>>6) != 0b10) return false;
+                cnt--;
+            }
+        }
+        return cnt == 0;
+    }
+
+394. Decode String
+(1) iteration
+Two stacks
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public String decodeString(String s) {
+        String temp = "";
+        Stack<Integer> num = new Stack<>();
+        Stack<String> str = new Stack<>();
+        int cnt = 0;
+        for(int i = 0; i<s.length(); i++){
+            char c = s.charAt(i);
+            if(c >= '0' && c <='9'){
+                cnt = cnt * 10 + c - '0';
+            }else if(c == '['){
+                num.push(cnt);
+                str.push(temp);
+                cnt = 0;
+                temp = "";
+            }else if(c == ']'){
+                int curCnt = num.pop();
+                String curStr = str.pop();
+                for(int j = 0; j<curCnt; j++){
+                    curStr = curStr + temp;
+                }
+                temp = curStr;
+            }else{
+                temp += c;
+            }
+        }
+        return str.isEmpty() ? temp : str.peek();
+    }
+}
+(2) recursion TLE
+class Solution {
+    public String decodeString(String s) {
+        int i = 0;
+        return decode(s, i);
+    }
+    private String decode(String s, int i){
+        String res = "";
+        int n = s.length();
+        while(i<n && s.charAt(i) != ']'){
+            char c = s.charAt(i);
+            if(c < '0' || c > '9'){
+                res += c;
+                i++;
+            }else{
+                int cnt = 0;
+                while(c >= '0' && c <= '9'){
+                    cnt = cnt * 10 + c - '0';
+                    i++;
+                }
+                i++;// jump '['
+                String temp = decode(s, i);
+                i++;
+                while(cnt >0){
+                    res += temp;
+                    cnt--;
+                }
+            }
+        }
+        return res;
+    }
+}
+
+395. Longest Substring with At Least K Repeating Characters
+(1) 
+Count the frequency of each letter.
+If there is no letter less than k, we return s.length;
+else
+we split s with those letter which frequency is less than k, and call function recursively with the split string
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public int longestSubstring(String s, int k) {
+        if(s == null || s.length() == 0)
+            return 0;
+        char[] cnt = new char[26];
+        for(int i = 0; i<s.length(); i++){
+            cnt[s.charAt(i) - 'a']++;
+        }
+        boolean flag = true;
+        for (int i = 0; i < cnt.length; i++) {
+            if (cnt[i] < k && cnt[i] > 0)
+                flag = false;
+        }
+        if (flag == true)
+            return s.length();
+        
+        int res = 0;
+        int start = 0, cur = 0;
+        while (cur < s.length()) {
+            if (cnt[s.charAt(cur) - 'a'] < k) {
+                res = Math.max(res, longestSubstring(s.substring(start, cur), k));
+                start = cur + 1;
+            }
+            cur++;
+        }
+        res = Math.max(res, longestSubstring(s.substring(start), k));
+        
+        return res;
+    }
+}
+(2) TLE
+统计原始字符串s中各字符的出现次数，统计其中出现次数少于k次的字符，得到数组filters。
+若filters为空数组，则直接返回s的长度。
+以filters为分隔符，将s拆分为若干子串，分别递归计算各子串的结果，返回最大值。
+class Solution {
+    public int longestSubstring(String s, int k) {
+        if(s == null || s.length() == 0)
+            return 0;
+        char[] cnt = new char[26];
+        for(int i = 0; i<s.length(); i++){
+            cnt[s.charAt(i) - 'a']++;
+        }
+        String filter = "";
+        for(int i = 0; i<cnt.length; i++){
+            if(cnt[i] < k){
+                filter += cnt[i];
+            }
+        }
+        
+        if(filter == ""){
+            return s.length();
+        }
+        
+        int res = 0;
+        
+        for(char fil : filter.toCharArray()){
+            String ch = String.valueOf(fil);
+            String[] temp = s.split(ch);
+            for(int j = 0; j<temp.length; j++){
+                res = Math.max(res, longestSubstring(temp[j], k));
+            }
+        }
+        return res;
+    }
+}
+ 
+PYTHON: 
+class Solution(object):
+    def longestSubstring(self, s, k):
+        """
+        :type s: str
+        :type k: int
+        :rtype: int
+        """
+        cnt = collections.Counter(s)
+        filters = [x for x in cnt if cnt[x] < k]
+        if not filters: return len(s)
+        tokens = re.split('|'.join(filters), s)
+        return max(self.longestSubstring(t, k) for t in tokens)   
+
+396. Rotate Function
+找规律题
+为了找规律，先把具体的数字抽象为A,B,C,D，那么我们可以得到：
+F(0) = 0A + 1B + 2C +3D
+F(1) = 0D + 1A + 2B +3C
+F(2) = 0C + 1D + 2A +3B
+F(3) = 0B + 1C + 2D +3A
+那么，我们通过仔细观察，我们可以得出下面的规律：
+sum = 1A + 1B + 1C + 1D
+F(1) = F(0) + sum - 4D
+F(2) = F(1) + sum - 4C
+F(3) = F(2) + sum - 4B
+那么我们就找到规律了, F(i) = F(i-1) + sum - n*A[n-i]
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int maxRotateFunction(int[] A) {
+        int Fi = 0;
+        int sum = 0;
+        int n = A.length;
+        for(int i = 0; i<n; i++){
+            sum += A[i];
+            Fi += i*A[i];
+        }
+        int res = Fi;
+        for(int i = 1; i<n; i++){
+            Fi = Fi + sum - n * A[n-i];
+            res = Math.max(res, Fi);
+        }
+        return res;
+    }
+
+397. Integer Replacement
+(1) recursion
+* Time complexity: O(logn)
+* Space complexity: O(n)
+public int integerReplacement(int n) {
+        if(n == 1) return 0;
+        if(n % 2 == 0) return 1+integerReplacement(n/2);
+        else{
+            //int t = n;
+            return 2+Math.min(integerReplacement(n/2), integerReplacement((n/2)+1));
+        }
+    }
+(2) iteration
+当n为奇数的时候，我们什么时候应该加1，什么时候应该减1呢，通过观察来说，除了3和7意外，所有加1就变成4的倍数的奇数，适合加1运算，比如15:
+15 -> 16 -> 8 -> 4 -> 2 -> 1
+15 -> 14 -> 7 -> 6 -> 3 -> 2 -> 1
+对于7来说，加1和减1的结果相同，我们可以不用管，对于3来说，减1的步骤小，所以我们需要去掉这种情况。那么我们如何知道某个数字加1后是否是4的倍数呢，我们可以用个小技巧，由于我们之前判定其是奇数了，那么最右边一位肯定是1，如果其右边第二位也是1的话，那么进行加1运算，进位后右边肯定会出现两个0，则一定是4的倍数。如果之前判定是偶数，那么除以2即可。
+public int integerReplacement(int n) {
+        long t = n; // set long overflow in case
+        int cnt = 0;
+        while(t > 1){
+            cnt++;
+            if((t & 1) == 1){
+                if((t & 2) == 1 && (t != 3)){
+                    t++;
+                }else{
+                    t--;
+                }
+            }else{
+                t >>= 1; // 1000(8) -> 100(4)
+            }
+        }
+        return cnt;
+    }
+398. Random Pick Index
+Reservoir Sampling
+
+class Solution {
+
+    private int[] reservior;
+    
+    public Solution(int[] nums) {
+        reservior = nums;
+    }
+    
+    public int pick(int target) {
+        int cnt = 0;
+        int res = -1;
+        for(int i = 0; i< reservior.length; i++){
+            if(reservior[i] != target){
+                continue;
+            }else{
+                cnt++;
+                int rand = new Random().nextInt(cnt);
+                if(rand == 0){
+                    res = i;
+                }
+            }           
+        }
+        return res;
+    }
+}
+
+/**
+ * Your Solution object will be instantiated and called as such:
+ * Solution obj = new Solution(nums);
+ * int param_1 = obj.pick(target);
+ */
+
+399. Evaluate Division
+
+400. Nth Digit
+我们首先来分析自然数序列和其位数的关系，前九个数都是1位的，然后10到99总共90个数字都是两位的，100到999这900个数都是三位的，那么这就很有规律了，我们可以定义个变量cnt，初始化为9，然后每次循环扩大10倍，再用一个变量len记录当前循环区间数字的位数，另外再需要一个变量start用来记录当前循环区间的第一个数字，我们n每次循环都减去len*cnt (区间总位数)，当n落到某一个确定的区间里了，那么(n-1)/len就是目标数字在该区间里的坐标，加上start就是得到了目标数字，然后我们将目标数字start转为字符串，(n-1)%len就是所要求的目标位
+* Time complexity: O(n)
+* Space complexity: O(1)
+public int findNthDigit(int n) {
+        int len = 1;
+        long cnt = 9;
+        int start = 1;
+        while(n > len * cnt){
+            n -= len * cnt;
+            len++;
+            cnt *= 10;
+            start *= 10;
+        }
+        start += (n-1) / len;
+        String t = String.valueOf(start);
+        return t.charAt((n-1) % len) - '0';
+    }
