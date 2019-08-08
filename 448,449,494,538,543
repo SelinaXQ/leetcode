@@ -1,0 +1,202 @@
+448. Find All Numbers Disappeared in an Array
+(1) set negative
+Set nums[nums[i] - 1] as negative, so we can find the disappeared numbers if the number in the position
+is positive.
+We can add position+1 into result.
+* Time complexity: O(n)
+* Space complexity: O(1)
+public List<Integer> findDisappearedNumbers(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        for(int i = 0; i<nums.length; i++){
+            int idx = Math.abs(nums[i]) - 1;
+            if(nums[idx] > 0){
+                nums[idx] = -nums[idx];
+            }
+        }
+        for(int i = 0; i<nums.length; i++){
+            if(nums[i] > 0){
+                res.add(i+1);
+            }
+        }
+        return res;
+    }
+(2) swap
+class Solution {
+    public List<Integer> findDisappearedNumbers(int[] nums) {
+        List<Integer> res = new ArrayList<>();
+        for(int i = 0 ; i<nums.length; i++){
+            if(nums[i] != nums[nums[i] - 1]){
+                swap(nums, i, nums[i] - 1);
+                i--;
+            }
+        }
+        for(int i = 0 ; i<nums.length; i++){
+            if(nums[i] != i+1){
+                res.add(i+1);
+            }
+        }
+        return res;
+    }
+    private void swap(int[] nums, int i, int j){
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+}
+
+449. Serialize and Deserialize BST design
+Recursion use stringbuilder and queue.
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+public class Codec {
+
+    // Encodes a tree to a single string.
+    public String serialize(TreeNode root) {
+        StringBuilder sb = new StringBuilder();
+        preorder(root, sb);
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+    
+    private void preorder(TreeNode root, StringBuilder sb){
+        if(root == null){
+            sb.append("#").append(",");
+            return;
+        }
+        sb.append(root.val).append(",");
+        preorder(root.left, sb);
+        preorder(root.right, sb);
+        
+    }
+
+    // Decodes your encoded data to tree.
+    public TreeNode deserialize(String data) {
+        Queue<String> queue = new LinkedList<>();
+        queue.addAll(Arrays.asList(data.split(",")));
+        return deserial(queue);
+    }
+    
+    private TreeNode deserial(Queue<String> queue){
+        String str = queue.poll();
+        if(str.equals("#")){
+            return null;
+        }
+        TreeNode root = new TreeNode(Integer.valueOf(str));
+        root.left = deserial(queue);
+        root.right = deserial(queue);
+        return root;
+    }
+}
+
+// Your Codec object will be instantiated and called as such:
+// Codec codec = new Codec();
+// codec.deserialize(codec.serialize(root));
+
+494. Target Sum
+(1) recursion
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    int res = 0;
+    public int findTargetSumWays(int[] nums, int S) {
+        helper(nums, S, 0);
+        return res;
+    }
+    private void helper(int[] nums, int S, int start){
+        if(start >= nums.length){
+            if(S == 0) res++;
+            return;
+        }
+        helper(nums, S-nums[start], start+1);
+        helper(nums, S+nums[start], start+1);
+    }
+}
+(2)dynamic programming
+https://blog.csdn.net/mine_song/article/details/70216562
+* Time complexity: O(n)
+* Space complexity: O(n)
+class Solution {
+    public int findTargetSumWays(int[] nums, int S) {
+        int sum = 0;
+        for(int i = 0; i<nums.length; i++){
+            sum += nums[i];
+        }
+        if(S > sum || (sum + S) % 2 == 1) return 0;
+        return helper(nums, (sum + S) / 2);
+    }
+    private int helper(int[] nums, int S){
+        int[] dp = new int[S+1];
+        dp[0] = 1;
+        for(int i = 0; i<nums.length; i++){
+            for(int j = S; j>=nums[i]; j--){
+                dp[j] += dp[j - nums[i]];
+            }
+        }
+        return dp[S];
+    }
+}
+
+538. Convert BST to Greater Tree
+right node -> root -> left node
+Record sum by this order and use recursion.
+* Time complexity: O(n)
+* Space complexity: O(n)
+recursion1 
+class Solution {
+        int sum = 0;
+    public TreeNode convertBST(TreeNode root) {
+        helper(root);
+        return root;
+    }
+    private void helper(TreeNode node){
+        if(node == null) return;
+        helper(node.right);
+        node.val += sum;
+        sum = node.val;
+        helper(node.left);
+    }
+}
+
+recursion2
+class Solution {
+    int sum = 0;
+    public TreeNode convertBST(TreeNode root) {
+        if(root == null) return null;
+        convertBST(root.right);
+        root.val += sum;
+        sum = root.val;
+        convertBST(root.left);
+        return root;
+    }
+}
+
+543. Diameter of Binary Tree
+recursion
+Let's calculate the depth of a node in the usual way: max(depth of node.left, depth of node.right) + 1. While we do, a path "through" this node uses 1 + (depth of node.left) + (depth of node.right) nodes. Let's search each node and remember the highest number of nodes used in some path. The desired length is 1 minus this number.
+* Time complexity; O(n)
+* Space complexity: O(n)
+class Solution {
+    int ans;
+    public int diameterOfBinaryTree(TreeNode root) {
+        ans = 1;
+        depth(root);
+        return ans - 1;
+    }
+    private int depth(TreeNode node){
+        if(node == null) return 0;
+        int left = depth(node.left);
+        int right = depth(node.right);
+        ans = Math.max(ans, left+right+1);
+        return Math.max(left, right) + 1;
+    }
+}
+
+
+
