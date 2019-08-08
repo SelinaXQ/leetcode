@@ -1,0 +1,157 @@
+406. Queue Reconstruction by Height
+(1) sort and addition space
+Sort by the height, if same height, smaller second number at front.
+Then insert the people into the position according to second number.
+* Time complexity: O(logn)
+* Space complexity: O(n)
+//arraylist add(index, element)
+class Solution {
+    public int[][] reconstructQueue(int[][] people) {
+        if(people == null || people.length == 0 || people[0].length == 0)
+            return new int[0][0];
+        List<int[]> res = new ArrayList<>();
+        Arrays.sort(people, (a, b) -> a[0] == b[0] ? a[1] - b[1] : b[0] - a[0]);
+        
+        for(int[] cur : people){
+            res.add(cur[1], cur);
+        }
+        return res.toArray(new int[people.length][]);
+    }
+}
+
+416. Partion Equal Subset Sum dynamic programming
+The sum of these number must be even.
+So our target is to find if the numbers can be add up to sum/2;
+dp[i]: sum i can be formed using nums.
+dp[i] = dp[i] || dp[i - num];
+这里需要特别注意的是，第二个for循环一定要从target遍历到nums[i]，而不能反过来，想想为什么呢？因为如果我们从nums[i]遍历到target的话，假如nums[i]=1的话，那么[1, target]中所有的dp值都是true，因为dp[0]是true，dp[1]会或上dp[0]，为true，dp[2]会或上dp[1]，为true，依此类推，完全使我们的dp数组失效了
+* Time complexity: O(n^2)
+* Space complexity: O(target)
+public boolean canPartition(int[] nums) {
+        int sum = 0;
+        for(int i = 0; i<nums.length; i++){
+            sum += nums[i];
+        }
+        if(sum % 2 == 1) return false;
+        int target = sum / 2;
+        
+        boolean[] dp = new boolean[target + 1];
+        dp[0] = true;
+        for(int num : nums){
+            for(int i = target; i>=num; i--){
+                dp[i] = dp[i] || dp[i - num];
+            }
+        }
+        return dp[target];
+    }
+
+437. Path Sum III recursion, tree
+我们可以用递归来做，相当于先序遍历二叉树，对于每一个节点都有记录了一条从根节点到当前节点到路径，同时用一个变量 curSum 记录路径节点总和，然后我们看 curSum 和 sum 是否相等，相等的话结果 res 加1，不等的话我们来继续查看子路径和有没有满足题意的，做法就是每次去掉一个节点，看路径和是否等于给定值，注意最后必须留一个节点，不能全去掉了，因为如果全去掉了，路径之和为0，而如果给定值刚好为0的话就会有问题
+* Time complexity: O(n)
+* Space complexity: O(n)
+/**
+ * Definition for a binary tree node.
+ * public class TreeNode {
+ *     int val;
+ *     TreeNode left;
+ *     TreeNode right;
+ *     TreeNode(int x) { val = x; }
+ * }
+ */
+class Solution {
+    int res = 0;
+    public int pathSum(TreeNode root, int sum) {
+        //int res = 0;
+        List<TreeNode> out = new ArrayList<>();
+        helper(root, sum, 0, out);
+        return res;
+    }
+    private void helper(TreeNode node, int sum, int curSum, List<TreeNode> out){
+        if(node == null) return;
+        curSum += node.val;
+        out.add(node);
+        if(curSum == sum) res++;
+        int temp = curSum;
+        for(int i = 0; i<out.size() - 1; i++){ // out.size()-1, 不能把刚加进去的当前节点算上
+            temp -= out.get(i).val;
+            if(temp == sum) res++;
+        }
+        helper(node.left, sum, curSum, out);
+        helper(node.right, sum, curSum, out);
+        
+        out.remove(out.size()-1);
+        
+    }
+}
+
+(2) recursion 简洁版
+用了两个递归函数，其中的一个 sumUp 递归函数是以当前结点为起点，和为 sum 的路径个数，采用了前序遍历，对于每个遍历到的节点进行处理，维护一个变量 pre 来记录之前路径之和，然后 cur 为 pre 加上当前节点值，如果 cur 等于 sum，那么返回结果时要加1，然后对当前节点的左右子节点调用递归函数求解，这是 sumUp 递归函数。而在 pathSum 函数中，我们对当前结点调用 sumUp 函数，加上对左右子结点调用 pathSum 递归函数，三者的返回值相加就是所求
+public int pathSum(TreeNode root, int sum) {
+        if(root == null) return 0;
+        return sumUp(root, 0, sum) + pathSum(root.left, sum) + pathSum(root.right, sum);
+    }
+    private int sumUp(TreeNode node, int pre, int sum){
+        if(node == null) return 0;
+        int cur = pre + node.val;
+        return (cur == sum ? 1 : 0) + sumUp(node.left, cur, sum) + sumUp(node.right, cur, sum);
+    }
+
+438. Find All Anagrams in a String
+anagram: 相同字母异序词
+首先统计p的长度，对s中每个字母开始，取p长度验证是否是anagram
+(1) bruto force
+* Time complexity: O(n)
+* Space complexity: O(1)
+class Solution {
+    public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        int len = p.length();
+        if(s == null) return res;
+        int[] cnt = new int[256];
+        for(char c : p.toCharArray()){
+            cnt[c]++;
+            //System.out.println(cnt[c]);
+        }
+        int i = 0;
+        while(i < s.length()){
+            int[] temp = cnt.clone();
+           // System.out.println(temp['a']);
+            char ch = s.charAt(i);
+            boolean found = true;
+            int j = i;
+            for(; j < i+p.length() && j<s.length(); j++){
+                if(--temp[s.charAt(j)] < 0){
+                    found = false;
+                    break;
+                }
+            }
+            if(j - i != p.length()){
+                found = false;
+            }
+            if(found){
+                res.add(i);
+            }
+            i++;
+        }
+        return res;
+    }
+}
+(2) sliding window
+首先统计字符串p的字符个数，然后用两个变量left和right表示滑动窗口的左右边界，用变量cnt表示字符串p中需要匹配的字符个数，然后开始循环，如果右边界的字符已经在哈希表中了，说明该字符在p中有出现，则cnt自减1，然后哈希表中该字符个数自减1，右边界自加1，如果此时cnt减为0了，说明p中的字符都匹配上了，那么将此时左边界加入结果res中。如果此时right和left的差为p的长度，说明此时应该去掉最左边的一个字符，我们看如果该字符在哈希表中的个数大于等于0，说明该字符是p中的字符，为啥呢，因为上面我们有让每个字符自减1，如果不是p中的字符，那么在哈希表中个数应该为0，自减1后就为-1，所以这样就知道该字符是否属于p，如果我们去掉了属于p的一个字符，cnt自增1
+public List<Integer> findAnagrams(String s, String p) {
+        List<Integer> res = new ArrayList<>();
+        if(s == null) return res;
+        int[] map = new int[256];
+        int left = 0;
+        int right = 0;
+        int cnt = p.length();
+        for(char c : p.toCharArray()){
+            map[c]++;
+        }
+        while(right < s.length()){
+            if(map[s.charAt(right++)]-- >= 1) cnt--;
+            if(cnt == 0) res.add(left);
+            if(right - left == p.length() && map[s.charAt(left++)]++ >= 0) cnt++;
+        }
+        return res;
+    }
